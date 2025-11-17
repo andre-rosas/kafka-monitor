@@ -1,0 +1,47 @@
+# Build outputs
+target/
+*.jar
+.classpath
+.project
+.lein-failures
+
+# Dependencies
+node_modules/
+.jar
+
+# Logs
+*.log
+logs/
+full-logs.txt
+order-processor-logs.txt
+query-processor-logs.txt
+registry-processor-logs.txt
+cassandra_migration_error.log
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Environment
+.env
+
+# Cache directories
+.clj-kondo/
+.lsp/
+.nrepl-port
+
+# Runtime data
+docker-compose.override.yml
+
+# Temporary files
+current_page.html
+*.bak
+lista_arquivos.txt
+
+# Coverage reports
+coverage/
+
+# OS
+.DS_Store
+Thumbs.db
