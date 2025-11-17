@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Configuração para TESTES - SEM LOGS -->
+    
+    <!-- NOP appender - não imprime nada -->
+    <appender name="NOP" class="ch.qos.logback.core.helpers.NOPAppender"/>
+
+    <!-- Silence ALL logs from DataStax Driver during tests -->
+    <logger name="com.datastax.oss" level="OFF" additivity="false">
+        <appender-ref ref="NOP"/>
+    </logger>
+    
+    <!-- Silence ALL logs from query-processor during tests -->
+    <logger name="query-processor" level="OFF" additivity="false">
+        <appender-ref ref="NOP"/>
+    </logger>
+    <logger name="query_processor" level="OFF" additivity="false">
+        <appender-ref ref="NOP"/>
+    </logger>
+    
+    <!-- Silence ALL logs from Kafka during tests -->
+    <logger name="org.apache.kafka" level="OFF" additivity="false">
+        <appender-ref ref="NOP"/>
+    </logger>
+    
+    <!-- Root logger - OFF (sem logs) -->
+    <root level="OFF">
+        <appender-ref ref="NOP"/>
+    </root>
+</configuration>
+

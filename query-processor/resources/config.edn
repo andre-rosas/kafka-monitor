@@ -1,0 +1,28 @@
+{:kafka
+ {:bootstrap-servers #profile {:dev "localhost:9092"
+                               :test "localhost:9092"
+                               :prod #env KAFKA_BOOTSTRAP_SERVERS}
+  :group-id "query-processor"
+  :topics ["orders"]
+  :poll-timeout-ms 1000
+  :max-poll-records 500}
+
+ :cassandra
+ {:host #profile {:dev "localhost"
+                  :test "localhost"
+                  :prod #env CASSANDRA_HOST}
+  :port #profile {:dev 9042
+                  :test 9042
+                  :prod #or [#env CASSANDRA_PORT 9042]}
+  :datacenter #profile {:dev "datacenter1"
+                        :test "datacenter1"
+                        :prod #env CASSANDRA_DATACENTER}
+  :keyspace "query_processor_store"}
+
+ :processor
+ {:processor-id #profile {:dev "query-processor-dev-1"
+                          :test "query-processor-test-1"
+                          :prod #env PROCESSOR_ID}
+  :timeline-max-size 100
+  :batch-size 100
+  :commit-interval-ms 5000}}
