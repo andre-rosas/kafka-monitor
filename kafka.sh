@@ -290,7 +290,7 @@ generate_test_data() {
         local unit_price=$((RANDOM % 100 + 10))
         local total=$((quantity * unit_price))
         local timestamp=$(date +%s)
-        local statuses=("pending" "confirmed" "shipped" "delivered")
+        local statuses=("pending" "accepted" "denied")
         local status=${statuses[$((RANDOM % 4))]}
         
         local message="{\"order-id\":\"ORDER-TEST-$i\",\"customer-id\":$customer_id,\"product-id\":\"$product_id\",\"quantity\":$quantity,\"unit-price\":$unit_price.0,\"total\":$total.0,\"timestamp\":$timestamp,\"status\":\"$status\"}"
