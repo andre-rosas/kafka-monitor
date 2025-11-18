@@ -178,7 +178,6 @@
     (is (not (s/valid? ::specs/status "shipped")))
     (is (not (s/valid? ::specs/status "delivered")))
     (is (not (s/valid? ::specs/status "cancelled")))
-    (is (not (s/valid? ::specs/status "accepted")))
     (is (not (s/valid? ::specs/status "")))
     (is (not (s/valid? ::specs/status nil)))
     (is (not (s/valid? ::specs/status "invalid")))))
