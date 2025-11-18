@@ -51,7 +51,7 @@
 
 (s/def ::status
   ;; "Order status. One of the allowed statuses."
-  #{"pending" "confirmed" "cancelled" "shipped" "delivered"})
+  #{"pending" "accepted" "denied"})
 
 (s/def ::order
   ;; "Complete order specification.

@@ -317,7 +317,7 @@
                  :unit-price 30.0
                  :total 150.0
                  :timestamp 1234567890
-                 :status "confirmed"})
+                 :status "accepted"})
   ;; => true
 
   ;; Create initial stats
