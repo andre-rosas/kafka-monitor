@@ -1,0 +1,31 @@
+{:kafka-consumer
+ {:bootstrap-servers #profile {:dev "localhost:9092"
+                               :test "localhost:9092"
+                               :prod #env KAFKA_BOOTSTRAP_SERVERS}
+  :group-id "registry-processor"
+  :topics ["orders" "registry"]
+  :poll-timeout-ms 1000}
+
+ :kafka-producer
+ {:bootstrap-servers #profile {:dev "localhost:9092"
+                               :test "localhost:9092"
+                               :prod #env KAFKA_BOOTSTRAP_SERVERS}
+  :registry-topic "registry"}
+
+ :cassandra
+ {:host #profile {:dev "localhost"
+                  :test "localhost"
+                  :prod #env CASSANDRA_HOST}
+  :port #profile {:dev 9042
+                  :test 9042
+                  :prod #or [#env CASSANDRA_PORT 9042]}
+  :datacenter #profile {:dev "datacenter1"
+                        :test "datacenter1"
+                        :prod #env CASSANDRA_DATACENTER}
+  :keyspace "registry_processor_store"}
+
+ :processor
+ {:processor-id #profile {:dev "registry-processor-dev-1"
+                          :test "registry-processor-test-1"
+                          :prod #env PROCESSOR_ID}
+  :commit-interval-ms 5000}}

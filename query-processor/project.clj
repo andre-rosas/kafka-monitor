@@ -1,6 +1,6 @@
 (defproject query-processor "0.1.0-SNAPSHOT"
   :description "Kafka consumer que materializa views de consulta dos pedidos"
-  :url "https://github.com/seu-usuario/kafka-monitor"
+  :url "https://github.com/andre-rosas/kafka-monitor"
 
   :dependencies [[org.clojure/clojure "1.11.3"]
 

@@ -1,5 +1,5 @@
-(defproject order-processor "0.1.0"
-  :description "Kafka orders producer - generates order events"
+(defproject registry-processor "0.1.0-SNAPSHOT"
+  :description "Kafka consumer/producer that validates orders and registers approved ones"
   :url "https://github.com/andre-rosas/kafka-monitor"
 
   :dependencies [[org.clojure/clojure "1.11.3"]
@@ -40,24 +40,21 @@
 
   :source-paths ["src/clj"]
   :test-paths ["test/clj"]
-  :resource-paths ["resources"]
+  :resource-paths ["resources" "test/resources"]
 
-  :main ^:skip-aot order-processor.core
+  :main ^:skip-aot registry-processor.core
 
   :target-path "target/%s"
-  :uberjar-name "order-processor-standalone.jar"
+  :uberjar-name "registry-processor-standalone.jar"
 
-  :profiles {:uberjar {:aot :all
-                       :jvm-opts ["-Dclojure.compiler.direct-linking=true"]}
-
+  :profiles {:uberjar {:aot :all}
              :dev {:dependencies [[org.clojure/test.check "1.1.1"]
+                                  [org.apache.kafka/kafka-streams-test-utils "3.6.0"]
                                   [org.testcontainers/testcontainers "1.19.1"]
-                                  [org.testcontainers/cassandra "1.19.1"]]
-                   :jvm-opts ["-Xmx2g"]
-                   :resource-paths ["test/resources"]}
-
-             :test {:jvm-opts ["-Xmx2g"
-                               "-Dlogback.configurationFile=test/resources/logback-test.xml"]}}
+                                  [org.testcontainers/cassandra "1.19.1"]
+                                  [org.testcontainers/kafka "1.19.1"]]
+                   :jvm-opts ["-Xmx2g"]}
+             :test {:jvm-opts ["-Xmx2g"]}}
 
   :aliases {"test-all" ["do" ["clean"] ["test"]]
             "uberjar-build" ["do" ["clean"] ["uberjar"]]}

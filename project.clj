@@ -1,6 +1,6 @@
 (defproject kafka-monitor "0.1.0-SNAPSHOT"
   :description "Kafka Monitor - Event-Driven Microservices"
-  :url "https://github.com/your-user/kafka-monitor"
+  :url "https://github.com/andre-rosas/kafka-monitor"
 
   :plugins [[lein-sub "0.3.0"]
             [lein-cljfmt "0.9.2"]
