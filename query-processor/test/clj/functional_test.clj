@@ -16,7 +16,7 @@
    :unit-price 30.0
    :total 150.0
    :timestamp 1000
-   :status "confirmed"})
+   :status "accepted"})
 
 (def order-2
   {:order-id "ORDER-002"
@@ -26,7 +26,7 @@
    :unit-price 50.0
    :total 150.0
    :timestamp 2000
-   :status "shipped"})
+   :status "pending"})
 
 (def order-3
   {:order-id "ORDER-003"
@@ -36,7 +36,7 @@
    :unit-price 30.0
    :total 300.0
    :timestamp 3000
-   :status "delivered"})
+   :status "denied"})
 
 ;; =============================================================================
 ;; Customer Stats Aggregation Tests

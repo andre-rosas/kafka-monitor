@@ -26,7 +26,7 @@
 
 (deftest test-generate-order-types
   (testing "Generated order fields have correct types"
-    (let [order (order/generate-order test-config)]  ; Usa test-config
+    (let [order (order/generate-order test-config)]
       (is (string? (:order-id order)) (str "Order ID should be string, got: " (:order-id order)))
       (is (number? (:customer-id order)) (str "Customer ID should be number, got: " (:customer-id order)))
       (is (string? (:product-id order)) (str "Product ID should be string, got: " (:product-id order)))

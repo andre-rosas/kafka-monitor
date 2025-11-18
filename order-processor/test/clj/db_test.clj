@@ -56,7 +56,7 @@
 
 (deftest test-order-to-cassandra-row-different-statuses
   (testing "order->cassandra-row handles different order statuses"
-    (let [statuses ["pending" "confirmed" "cancelled" "shipped" "delivered"]]
+    (let [statuses ["pending" "accepted" "denied"]]
       (doseq [status statuses]
         (let [order {:order-id "123e4567-e89b-12d3-a456-426614174000"
                      :customer-id 1

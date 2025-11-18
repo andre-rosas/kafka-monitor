@@ -127,6 +127,6 @@
 (deftest test-generated-orders-are-valid
   (testing "All generated orders are valid"
     (dotimes [_ 100]
-      (let [order (first (stest/sample (model/gen-order) 1))]
+      (let [order (first (clojure.spec.gen.alpha/sample (model/gen-order) 1))]
         (is (model/valid-order? order))
         (is (model/total-matches? order))))))

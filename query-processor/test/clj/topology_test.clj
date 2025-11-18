@@ -5,11 +5,11 @@
 
 ;; Test orders
 (def order-1 {:order-id "ORDER-001" :customer-id 42 :product-id "PROD-A"
-              :quantity 5 :unit-price 30.0 :total 150.0 :timestamp 1000 :status "confirmed"})
+              :quantity 5 :unit-price 30.0 :total 150.0 :timestamp 1000 :status "accepted"})
 (def order-2 {:order-id "ORDER-002" :customer-id 42 :product-id "PROD-B"
-              :quantity 3 :unit-price 50.0 :total 150.0 :timestamp 2000 :status "shipped"})
+              :quantity 3 :unit-price 50.0 :total 150.0 :timestamp 2000 :status "pending"})
 (def order-3 {:order-id "ORDER-003" :customer-id 99 :product-id "PROD-A"
-              :quantity 10 :unit-price 30.0 :total 300.0 :timestamp 3000 :status "delivered"})
+              :quantity 10 :unit-price 30.0 :total 300.0 :timestamp 3000 :status "denied"})
 
 (deftest test-aggregate-single-order
   (testing "Aggregate single order updates all views"
