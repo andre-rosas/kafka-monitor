@@ -1,13 +1,7 @@
 # =============================================================================
 # Query Processor Dockerfile
 # =============================================================================
-# Multi-stage build for query-processor microservice
-# Stage 1: Build uberjar with Leiningen
-# Stage 2: Run with minimal JRE
 
-# =============================================================================
-# Stage 1: Build
-# =============================================================================
 FROM clojure:temurin-21-lein AS builder
 
 WORKDIR /app
@@ -25,13 +19,6 @@ RUN lein uberjar
 FROM eclipse-temurin:21-jre-jammy
 
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
-
-# Install required tools
-# RUN apk add --no-cache curl
-
-# Create app user (security best practice)
-# RUN addgroup -g 1001 -S appuser && \
-#     adduser -u 1001 -S appuser -G appuser
 
 RUN groupadd --system appuser && \
     useradd --system --uid 1001 --gid appuser --home /app --shell /sbin/nologin appuser
@@ -59,9 +46,6 @@ ENV PROFILE=prod
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
-# Expose port (if adding HTTP API later)
-# EXPOSE 8080
-
 # Run application
 ENTRYPOINT ["java", \
     "-XX:+UseContainerSupport", \
@@ -70,19 +54,3 @@ ENTRYPOINT ["java", \
     "-Dlogback.configurationFile=logback.xml", \
     "-jar", \
     "/app/query-processor.jar"]
-
-# =============================================================================
-# Build and Run Instructions
-# =============================================================================
-# Build:
-#   docker build -t query-processor:latest .
-#
-# Run (standalone):
-#   docker run --rm \
-#     -e KAFKA_BOOTSTRAP_SERVERS=localhost:9092 \
-#     -e CASSANDRA_HOST=localhost \
-#     query-processor:latest
-#
-# Run (with docker-compose):
-#   See docker-compose.yml in project root
-# =============================================================================
