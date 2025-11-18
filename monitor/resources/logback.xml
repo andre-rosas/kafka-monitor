@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- TEST Configs -->
+    
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Silence logs from DataStax Driver during tests -->
+    <logger name="com.datastax.oss.driver" level="WARN"/>
+    
+    <!-- Silence logs of mocks during tests -->
+    <logger name="monitor.cassandra-test" level="WARN"/>
+    
+    <!-- Silence logs from Cassandra during tests -->
+    <logger name="monitor.cassandra" level="WARN"/>
+    
+    <!-- Silence logs from Jetty during tests -->
+    <logger name="org.eclipse.jetty" level="WARN"/>
+    
+    <!-- Root logger - only WARN and ERROR -->
+    <root level="WARN">
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>

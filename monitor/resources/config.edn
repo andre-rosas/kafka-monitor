@@ -1,0 +1,15 @@
+{:server
+ {:port #profile {:dev 3000
+                  :test 3001
+                  :prod #or [#env PORT 8080]}}
+
+ :cassandra
+ {:host #profile {:dev "localhost"
+                  :test "localhost"
+                  :prod #env CASSANDRA_HOST}
+  :port #profile {:dev 9042
+                  :test 9042
+                  :prod #or [#env CASSANDRA_PORT 9042]}
+  :datacenter #profile {:dev "datacenter1"
+                        :test "datacenter1"
+                        :prod #env CASSANDRA_DATACENTER}}}

@@ -1,0 +1,949 @@
+/* =============================================================================
+   KAFKA MONITOR - COMPLETE STYLES
+   ============================================================================= */
+
+/* =============================================================================
+   1. RESET & BASE
+   ============================================================================= */
+   * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    line-height: 1.6;
+  }
+  
+  .app {
+    min-height: 100vh;
+  }
+  
+  /* =============================================================================
+     2. NAVBAR
+     ============================================================================= */
+  .navbar {
+    background: #1e293b;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  
+  .navbar-brand h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #60a5fa;
+  }
+  
+  .navbar-menu {
+    display: flex;
+    gap: 0.5rem;
+  }
+  
+  .navbar-item {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    color: #94a3b8;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+  
+  .navbar-item:hover {
+    background: #334155;
+    color: #e2e8f0;
+  }
+  
+  .navbar-item.active {
+    background: #3b82f6;
+    color: white;
+  }
+  
+  /* =============================================================================
+     3. CONTAINER & LAYOUT
+     ============================================================================= */
+  .container {
+    max-width: 1400px;
+    margin: 2rem auto;
+    padding: 0 2rem;
+  }
+  
+  .view-header h1 {
+    margin: 0 0 0.5rem 0;
+    color: #f1f5f9;
+    font-size: 2rem;
+  }
+  
+  .view-header .subtitle {
+    margin: 0;
+    color: #94a3b8;
+  }
+  
+  /* =============================================================================
+     4. STATS GRID (DASHBOARD CARDS)
+     ============================================================================= */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  
+  .stat-card {
+    background: #1e293b;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    transition: transform 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-4px);
+  }
+  
+  .stat-card.blue { border-left: 4px solid #3b82f6; }
+  .stat-card.green { border-left: 4px solid #10b981; }
+  .stat-card.purple { border-left: 4px solid #8b5cf6; }
+  .stat-card.orange { border-left: 4px solid #f59e0b; }
+  .stat-card.yellow { border-left: 4px solid #fbbf24; }
+  .stat-card.red { border-left: 4px solid #ef4444; }
+  .stat-card.gray { border-left: 4px solid #64748b; }
+  
+  .stat-icon {
+    font-size: 2.5rem;
+  }
+  
+  .stat-content {
+    flex: 1;
+  }
+  
+  .stat-title {
+    font-size: 0.875rem;
+    color: #94a3b8;
+    margin-bottom: 0.25rem;
+  }
+  
+  .stat-value {
+    font-size: 1.875rem;
+    font-weight: 700;
+  }
+  
+  .stat-subtitle {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+  }
+  
+  /* =============================================================================
+     5. BUTTONS
+     ============================================================================= */
+  .btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+  }
+  
+  .btn.primary {
+    background: #3b82f6;
+    color: white;
+  }
+  
+  .btn.primary:hover {
+    background: #2563eb;
+  }
+  
+  .btn.secondary {
+    background: #475569;
+    color: white;
+  }
+  
+  .btn.secondary:hover {
+    background: #334155;
+  }
+  
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .btn-refresh {
+    padding: 0.5rem 1rem;
+    background: #10b981;
+    border: none;
+    border-radius: 0.5rem;
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  
+  .btn-refresh:hover {
+    background: #059669;
+    transform: scale(1.05);
+  }
+  
+  .btn-clear {
+    padding: 0.5rem 1rem;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    transition: background 0.2s;
+  }
+  
+  .btn-clear:hover {
+    background: #dc2626;
+  }
+  
+  /* =============================================================================
+     6. TABLES
+     ============================================================================= */
+  .table,
+  .sortable-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .table thead,
+  .sortable-table thead {
+    background: #0f172a;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  
+  .table th,
+  .sortable-table th {
+    padding: 1rem;
+    text-align: left;
+    color: #94a3b8;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid #334155;
+  }
+  
+  .sortable-table th {
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s, color 0.2s;
+  }
+  
+  .sortable-table th:hover {
+    background: #1e293b;
+    color: #f1f5f9;
+  }
+  
+  .sortable-table th.sorted {
+    color: #3b82f6;
+    background: #1e293b;
+  }
+  
+  .table td,
+  .sortable-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #334155;
+    color: #f1f5f9;
+  }
+  
+  .table tbody tr,
+  .sortable-table tbody tr {
+    transition: background 0.2s;
+  }
+  
+  .table tbody tr:hover,
+  .sortable-table tbody tr:hover {
+    background: #0f172a;
+  }
+  
+  .table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  .table-header h3 {
+    margin: 0;
+  }
+  
+  .table-search {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  
+  .table-search .search-input {
+    min-width: 250px;
+  }
+  
+  /* =============================================================================
+     7. FORMS
+     ============================================================================= */
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #cbd5e1;
+    font-weight: 500;
+    font-size: 0.875rem;
+  }
+  
+  .form-control,
+  .search-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    background: #0f172a;
+    color: #f1f5f9;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+  }
+  
+  .form-control:focus,
+  .search-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  /* =============================================================================
+     8. STATUS BADGES
+     ============================================================================= */
+  .status-badge,
+  .order-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  
+  .status-badge.pending,
+  .order-status.pending {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+  }
+  
+  .status-badge.approved,
+  .order-status.approved {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+  }
+  
+  .status-badge.denied,
+  .order-status.denied {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+  }
+  
+  .status-badge.status-healthy {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+  }
+  
+  /* =============================================================================
+     9. DASHBOARD SPECIFIC
+     ============================================================================= */
+  .dashboard-view .view-header {
+    margin-bottom: 2rem;
+  }
+  
+  .dashboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  
+  .dashboard-header h1 {
+    margin: 0;
+  }
+  
+  .dashboard-header .subtitle {
+    flex-basis: 100%;
+    margin: 0;
+  }
+  
+  .dashboard-content {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+  }
+  
+  .recent-activity {
+    background: #1e293b;
+    padding: 2rem;
+    border-radius: 1rem;
+  }
+  
+  .recent-activity h3 {
+    margin: 0 0 1.5rem 0;
+    color: #60a5fa;
+  }
+  
+  .activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .activity-item {
+    background: #0f172a;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1rem;
+    align-items: center;
+  }
+  
+  .activity-icon {
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .activity-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .order-id {
+    font-family: monospace;
+    font-size: 0.875rem;
+    color: #94a3b8;
+  }
+  
+  .activity-details {
+    color: #cbd5e1;
+    font-size: 0.9rem;
+  }
+  
+  .activity-time {
+    color: #64748b;
+    font-size: 0.875rem;
+  }
+  
+  /* =============================================================================
+     10. CUSTOMERS VIEW
+     ============================================================================= */
+  .customers-view {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  
+  .customers-content {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+  
+  .customers-main {
+    min-width: 0;
+    background: #1e293b;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .customers-sidebar {
+    background: #1e293b;
+    padding: 2rem;
+    border-radius: 12px;
+    height: fit-content;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .top-customers h3 {
+    margin: 0 0 0.5rem 0;
+    color: #f1f5f9;
+    font-size: 1.25rem;
+  }
+  
+  .top-customers .description {
+    margin: 0 0 1.5rem 0;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+  
+  .customers-info h3 {
+    margin: 0 0 1rem 0;
+    color: #f1f5f9;
+    font-size: 1.125rem;
+  }
+  
+  .info-box {
+    background: #0f172a;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid #3b82f6;
+  }
+  
+  .info-box p {
+    margin: 0 0 1rem 0;
+    color: #cbd5e1;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  
+  .info-box h4 {
+    margin: 1.5rem 0 0.75rem 0;
+    color: #f1f5f9;
+    font-size: 1rem;
+  }
+  
+  .info-box h4:first-of-type {
+    margin-top: 0;
+  }
+  
+  .info-box ul {
+    margin: 0 0 1rem 0;
+    padding-left: 1.5rem;
+    color: #cbd5e1;
+  }
+  
+  .info-box li {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+  
+  .info-box strong {
+    color: #f1f5f9;
+    font-weight: 600;
+  }
+  
+  /* =============================================================================
+     11. PRODUCTS VIEW (same structure as customers)
+     ============================================================================= */
+  .products-view {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  
+  .products-content {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+  
+  .products-main {
+    min-width: 0;
+    background: #1e293b;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .products-sidebar {
+    background: #1e293b;
+    padding: 2rem;
+    border-radius: 12px;
+    height: fit-content;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .top-products h3 {
+    margin: 0 0 0.5rem 0;
+    color: #f1f5f9;
+    font-size: 1.25rem;
+  }
+  
+  .top-products .description {
+    margin: 0 0 1.5rem 0;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+  
+  .products-info h3 {
+    margin: 0 0 1rem 0;
+    color: #f1f5f9;
+    font-size: 1.125rem;
+  }
+  
+  /* =============================================================================
+     12. ORDERS VIEW
+     ============================================================================= */
+  .orders-view {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  
+  .orders-content {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .order-search-container {
+    background: #1e293b;
+    padding: 2rem;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 700px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .order-search-container h3 {
+    margin: 0 0 0.5rem 0;
+    color: #f1f5f9;
+    font-size: 1.5rem;
+  }
+  
+  .order-search-container .description {
+    margin: 0 0 2rem 0;
+    color: #94a3b8;
+    font-size: 0.95rem;
+  }
+  
+  .help-section {
+    background: #0f172a;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid #3b82f6;
+    margin-top: 2rem;
+  }
+  
+  .help-section h4 {
+    margin: 0 0 1rem 0;
+    color: #f1f5f9;
+  }
+  
+  .help-section ul {
+    margin: 0;
+    padding-left: 1.5rem;
+    color: #cbd5e1;
+  }
+  
+  .help-section li {
+    margin-bottom: 0.5rem;
+  }
+  
+  /* =============================================================================
+     13. PROCESSORS VIEW
+     ============================================================================= */
+  .processors-view {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  
+  .processors-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+  
+  .processor-card {
+    background: #1e293b;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #64748b;
+  }
+  
+  .processor-card.status-healthy {
+    border-left-color: #10b981;
+  }
+  
+  .processor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #334155;
+  }
+  
+  .processor-header h4 {
+    margin: 0;
+    color: #f1f5f9;
+    font-size: 1.125rem;
+  }
+  
+  .processor-body p {
+    margin: 0;
+    color: #cbd5e1;
+    line-height: 1.6;
+    font-size: 0.95rem;
+  }
+  
+  /* =============================================================================
+     14. ABOUT VIEW
+     ============================================================================= */
+  .about-view {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .about-content > div {
+    margin-bottom: 3rem;
+  }
+  
+  .architecture-section,
+  .tech-stack-section,
+  .features-section,
+  .limitations-section,
+  .getting-started-section {
+    background: #1e293b;
+    padding: 2rem;
+    border-radius: 12px;
+  }
+  
+  .architecture-section h3,
+  .tech-stack-section h3,
+  .features-section h3,
+  .limitations-section h3,
+  .getting-started-section h3 {
+    margin: 0 0 1.5rem 0;
+    color: #f1f5f9;
+  }
+  
+  .diagram pre {
+    background: #0f172a;
+    padding: 1.5rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    color: #cbd5e1;
+    font-family: monospace;
+    font-size: 0.85rem;
+    line-height: 1.6;
+  }
+  
+  .tech-grid,
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minspan(250px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .tech-card,
+  .feature-card {
+    background: #0f172a;
+    padding: 1.5rem;
+    border-radius: 8px;
+  }
+  
+  .tech-card {
+    border-left: 4px solid #3b82f6;
+  }
+  
+  .feature-card {
+    text-align: center;
+    transition: transform 0.2s;
+  }
+  
+  .feature-card:hover {
+    transform: translateY(-4px);
+  }
+  
+  .feature-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .code-block pre {
+    background: #0f172a;
+    padding: 1rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    color: #cbd5e1;
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    border: 1px solid #334155;
+  }
+  
+  .footer-section {
+    text-align: center;
+    padding: 2rem;
+    background: #1e293b;
+    border-radius: 12px;
+    margin-top: 2rem;
+  }
+  
+  .footer-text {
+    margin: 0.5rem 0;
+    color: #94a3b8;
+    font-size: 0.95rem;
+  }
+  
+  /* =============================================================================
+     15. LOADING & ERRORS
+     ============================================================================= */
+  .loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem;
+  }
+  
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #334155;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  .error-alert {
+    background: #7f1d1d;
+    color: #fecaca;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  /* =============================================================================
+     16. RESPONSIVE
+     ============================================================================= */
+  @media (max-width: 1200px) {
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  @media (max-width: 1024px) {
+    .customers-content,
+    .products-content {
+      grid-template-columns: 1fr;
+    }
+    
+    .customers-sidebar,
+    .products-sidebar {
+      order: 2;
+    }
+    
+    .dashboard-content {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .navbar {
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .navbar-menu {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .processors-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .tech-grid,
+    .features-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Search result card */
+.search-result {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #0f172a;
+  border-radius: 8px;
+  border: 1px solid #334155;
+}
+
+.search-result h4 {
+  margin: 0 0 1rem 0;
+  color: #f1f5f9;
+  font-size: 1.125rem;
+}
+
+.details-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.details-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #334155;
+}
+
+.details-table td:first-child {
+  color: #94a3b8;
+  font-weight: 600;
+  width: 150px;
+}
+
+.details-table td:last-child {
+  color: #f1f5f9;
+}
+
+.details-table tr:last-child td {
+  border-bottom: none;
+}
+
+.error-alert {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid #ef4444;
+  color: #fecaca;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
