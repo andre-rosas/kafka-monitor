@@ -69,7 +69,10 @@
                   :class (when (= @sort-key :total-spent) "sorted")
                   :style {:cursor "pointer"}}
              "Total Spent" (sort-indicator :total-spent)]
-            [:th "Last Order"]]]
+            [:th {:on-click #(toggle-sort :last-order-timestamp)
+                  :class (when (= @sort-key :last-order-timestamp) "sorted")
+                  :style {:cursor "pointer"}}
+             "Last Order" (sort-indicator :last-order-timestamp)]]]
           [:tbody
            (if (empty? sorted-customers)
              [:tr [:td {:col-span 4 :style {:text-align "center"}}
@@ -83,7 +86,7 @@
                 [:td (:total-orders customer)]
                 [:td (str "$" (.toFixed (or (:total-spent customer) 0) 2))]
                 [:td (when-let [ts (:last-order-timestamp customer)]
-                       (.toLocaleDateString (js/Date. ts)))]]))]]]))))
+                       (.toLocaleString (js/Date. ts)))]]))]]]))))
 
 (defn customers-info []
   [:div.customers-info
