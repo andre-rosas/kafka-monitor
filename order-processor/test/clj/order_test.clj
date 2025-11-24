@@ -34,7 +34,7 @@
       (is (number? (:unit-price order)) (str "Unit price should be number, got: " (:unit-price order)))
       (is (number? (:total order)) (str "Total should be number, got: " (:total order)))
       (is (number? (:timestamp order)) (str "Timestamp should be number, got: " (:timestamp order)))
-      (is (= "PENDING" (:status order)) (str "Status should be PENDING, got: " (:status order))))))
+      (is (= "pending" (:status order)) (str "Status should be pending, got: " (:status order))))))
 
 (deftest test-order-total-calculation
   (testing "Order total equals quantity * price (with proper rounding and tolerance)"

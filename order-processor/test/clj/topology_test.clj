@@ -55,7 +55,7 @@
 (def ^:dynamic *mock-producer* nil)
 
 (def mock-orders-config
-  {:customer-id-range [1 1000]
+  {:customer-ids [1 2 3 4 5 6 7 8 9 10]
    :product-ids ["PROD-001" "PROD-002" "PROD-003" "PROD-004" "PROD-005"]
    :quantity-range [1 10]
    :price-range [10.0 100.0]})
