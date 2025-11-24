@@ -1,132 +1,192 @@
 (ns views.orders
-  "Orders view - search registered orders by UUID."
-  (:require [reagent.core :as r]))
+  "Orders view - complete table with search."
+  (:require [reagent.core :as r]
+            [re-frame.core :as rf]
+            [monitor.events :as events]
+            [monitor.subs :as subs]))
 
-(defn search-order!
-  "Search for order by UUID via API."
-  [order-id result-atom loading-atom error-atom]
+;; =============================================================================
+;; Helper Functions 
+;; =============================================================================
 
-  (reset! loading-atom true)
-  (reset! error-atom nil)
-  (reset! result-atom nil)
-
-  (-> (js/fetch (str "/api/orders/search/" order-id))
-      (.then (fn [response]
-               (if (.-ok response)
-                 (.json response)
-                 (throw (js/Error. "Order not found")))))
-      (.then (fn [data]
-               (let [parsed (js->clj data :keywordize-keys true)]
-                 (if (:success parsed)
-                   (reset! result-atom parsed)
-                   (reset! error-atom (:message parsed "Order not found"))))))
-      (.catch (fn [error]
-                (reset! error-atom (.-message error))))
-      (.finally (fn []
-                  (reset! loading-atom false)))))
-
-(defn format-timestamp
-  "Format timestamp to readable date."
-  [ts]
-
+(defn format-timestamp [ts]
   (when ts
-    (.toLocaleString (js/Date. ts))))
+    (let [date (js/Date. ts)]
+      (.toLocaleString date "pt-BR"
+                       #js {:year "numeric"
+                            :month "2-digit"
+                            :day "2-digit"
+                            :hour "2-digit"
+                            :minute "2-digit"
+                            :second "2-digit"}))))
 
-(defn order-result-card [result]
-  "Display order details."
-  (let [order (:data result)
-        source (:source result)
-        message (:message result)]
-    [:div.search-result
-     [:div {:style {:display "flex" :justify-content "space-between" :align-items "center" :margin-bottom "1rem"}}
-      [:h4 "Order Details"]
-      [:span.status-badge {:class source}
-       (if (= source "registered") "✓ Validated" "⏳ Pending Validation")]]
+(defn format-currency [value]
+  (when value
+    (str "$" (.toFixed value 2))))
 
-     (when message
-       [:p {:style {:color "#94a3b8" :margin-bottom "1rem"}} message])
+(defn status-badge [status]
+  [:span.status-badge {:class status}
+   (case status
+     "pending" "⏳ Pending"
+     "accepted" "✓ Accepted"
+     "denied" "✗ Denied"
+     status)])
 
-     [:table.details-table
-      [:tbody
-       [:tr [:td "Order ID"] [:td {:style {:font-family "monospace"}} (:order-id order)]]
-       [:tr [:td "Customer ID"] [:td (:customer-id order)]]
-       [:tr [:td "Product ID"] [:td (:product-id order)]]
-       [:tr [:td "Quantity"] [:td (:quantity order)]]
-       [:tr [:td "Total"] [:td (str "$" (.toFixed (:total order) 2))]]
-       [:tr [:td "Status"]
-        [:td [:span.status-badge {:class (:status order)} (:status order)]]]
-
-       (when (:registered-at order)
-         [:tr [:td "Registered At"] [:td (format-timestamp (:registered-at order))]])
-
-       (when (:updated-at order)
-         [:tr [:td "Updated At"] [:td (format-timestamp (:updated-at order))]])
-
-       (when (:version order)
-         [:tr [:td "Version"] [:td (:version order)]])
-
-       (when (contains? order :validation-passed)
-         [:tr [:td "Validation Passed"]
-          [:td (if (:validation-passed order) "✓ Yes" "✗ No")]])]]]))
+;; =============================================================================
+;; Search Component (ESTILO PADRONIZADO)
+;; =============================================================================
 
 (defn order-search []
-  (let [order-id (r/atom "")
-        result (r/atom nil)
+  (let [search-term (r/atom "")
+        search-result (r/atom nil)
         loading? (r/atom false)
         error (r/atom nil)]
     (fn []
-      [:div.order-search-container
-       [:h3 "Search Registered Order"]
-       [:p.description "Search for orders in registered_orders table or recent timeline."]
-
-       [:div.form-group
-        [:label {:for "order-id"} "Order ID (UUID)"]
+      [:div.search-section
+       [:h3 "Search Orders"]
+       [:div.search-box
         [:input.form-control
-         {:id "order-id"
-          :type "text"
-          :placeholder "e.g., a63c52a3-a507-4b70-9578-7dd49c3a841c"
-          :value @order-id
-          :on-change #(reset! order-id (-> % .-target .-value))
-          :disabled @loading?}]]
-
-       [:div {:style {:display "flex" :gap "1rem" :margin-bottom "2rem"}}
+         {:type "text"
+          :placeholder "Search by Order ID (complete UUID)"
+          :value @search-term
+          :on-change #(reset! search-term (-> % .-target .-value))
+          :disabled @loading?}]
         [:button.btn.primary
-         {:on-click #(when-not (empty? @order-id)
-                       (search-order! @order-id result loading? error))
-          :disabled (or @loading? (empty? @order-id))}
-         (if @loading? "🔍 Searching..." "🔍 Search Order")]
-
-        (when-not (empty? @order-id)
+         {:on-click (fn []
+                      (when-not (empty? @search-term)
+                        (reset! loading? true)
+                        (reset! error nil)
+                        (-> (js/fetch (str "/api/orders/search/" @search-term))
+                            (.then #(.json %))
+                            (.then (fn [data]
+                                     (let [parsed (js->clj data :keywordize-keys true)]
+                                       (if (:success parsed)
+                                         (reset! search-result parsed)
+                                         (reset! error (:message parsed))))))
+                            (.catch #(reset! error (.-message %)))
+                            (.finally #(reset! loading? false)))))
+          :disabled (or @loading? (empty? @search-term))}
+         (if @loading? "🔍 Searching..." "🔍 Search")]
+        (when-not (empty? @search-term)
           [:button.btn.secondary
            {:on-click #(do
-                         (reset! order-id "")
-                         (reset! result nil)
+                         (reset! search-term "")
+                         (reset! search-result nil)
                          (reset! error nil))}
            "✕ Clear"])]
 
-       ;; Error message
        (when @error
-         [:div.error-alert
-          [:span "⚠️ " @error]])
+         [:div.error-alert "⚠️ " @error])
 
-       ;; Result
-       (when @result
-         [order-result-card @result])
+       (when @search-result
+         (let [order (:data @search-result)]
+           [:div.search-result
+            [:h4 "Order Details"]
+            [:table.details-table
+             [:tbody
+              [:tr [:td "Order ID"] [:td {:style {:font-family "monospace"}} (:order-id order)]]
+              [:tr [:td "Customer ID"] [:td (:customer-id order)]]
+              [:tr [:td "Product ID"] [:td (:product-id order)]]
+              [:tr [:td "Quantity"] [:td (:quantity order)]]
+              [:tr [:td "Unit Price"] [:td (format-currency (:unit-price order))]]
+              [:tr [:td "Total"] [:td (format-currency (:total order))]]
+              [:tr [:td "Status"] [:td [status-badge (:status order)]]]
+              [:tr [:td "Timestamp"] [:td (format-timestamp (:timestamp order))]]]]
+            (when (and (= "registered" (:source @search-result))
+                       (= "accepted" (get-in @search-result [:data :status])))
+              [:div.info-box
+               [:p "✓ This order is validated and accepted in the registry."]])
 
-       ;; Help section
-       [:div.help-section
-        [:h4 "💡 How to use"]
-        [:ul
-         [:li "Copy an order ID from the Recent Activity section on the Dashboard"]
-         [:li "Paste it in the search field above"]
-         [:li "Click 'Search Order' to view full order details"]
-         [:li "Searches both registered_orders table and recent timeline"]
-         [:li "Orders approved/denied manually are now properly registered"]]]])))
+            (when (and (= "registered" (:source @search-result))
+                       (= "denied" (get-in @search-result [:data :status])))
+              [:div.error-box
+               [:p "✗ This order was validated, but denied."]])]))])))
+
+;; =============================================================================
+;; Orders Table Component
+;; =============================================================================
+
+(defn orders-table []
+  (let [orders (rf/subscribe [::subs/timeline])
+        loading? (rf/subscribe [::subs/loading?])]
+    (fn []
+      [:div.orders-main
+       [:div.table-header
+        [:h3 "Recent Orders"]
+        [:button.btn.primary
+         {:on-click #(rf/dispatch [::events/fetch-timeline])}
+         "🔄 Refresh"]]
+
+       (if @loading?
+         [:div.loading "Loading orders..."]
+         (if (empty? @orders)
+           [:div.empty-state
+            [:p "No orders found"]]
+           [:div.table-container
+            [:table.sortable-table
+             [:thead
+              [:tr
+               [:th "Order ID"]
+               [:th "Customer"]
+               [:th "Product"]
+               [:th "Qty"]
+               [:th "Total"]
+               [:th "Status"]
+               [:th "Date/Time"]]]
+             [:tbody
+              (for [order @orders]
+                ^{:key (:order-id order)}
+                [:tr
+                 [:td
+                  [:code {:style {:font-size "0.8em" :wordBreak "break-all"}}
+                   (:order-id order)]]
+                 [:td (:customer-id order)]
+                 [:td (:product-id order)]
+                 [:td (:quantity order)]
+                 [:td (format-currency (:total order))]
+                 [:td [status-badge (:status order)]]
+                 [:td.timestamp (format-timestamp (:timestamp order))]])]]]))])))
+
+;; =============================================================================
+;; Orders Info Sidebar
+;; =============================================================================
+
+(defn orders-info []
+  [:div.orders-info
+   [:h3 "About Orders"]
+   [:div.info-box
+    [:p "Real-time order processing and validation system."]
+    [:h4 "📊 Features:"]
+    [:ul
+     [:li [:strong "Search:"] " Find orders by complete UUID"]
+     [:li [:strong "Filter:"] " View orders by status"]
+     [:li [:strong "Real-time:"] " Live updates from Kafka"]
+     [:li [:strong "Validation:"] " See order approval status"]]
+    [:h4 "🔄 Status Types:"]
+    [:ul
+     [:li "⏳ Pending - Awaiting validation"]
+     [:li "✓ Accepted - Approved and registered"]
+     [:li "✗ Denied - Failed validation"]]
+    [:p [:strong "Note:"] " Table shows 100 most recent orders"]]])
+
+;; =============================================================================
+;; Main Orders View
+;; =============================================================================
 
 (defn orders-view []
-  [:div.orders-view
-   [:div.view-header
-    [:h1 "Orders"]
-    [:p.subtitle "Search and view registered orders"]]
-   [:div.orders-content
-    [order-search]]])
+  (r/create-class
+   {:component-did-mount
+    (fn []
+      (rf/dispatch [::events/fetch-timeline]))
+    :reagent-render
+    (fn []
+      [:div.orders-view
+       [:div.view-header
+        [:h1 "📦 Orders"]
+        [:p.subtitle "View and search system orders"]]
+       [:div.orders-content
+        [:div.orders-main
+         [order-search]
+         [orders-table]]
+        [:div.orders-sidebar
+         [orders-info]]]])}))

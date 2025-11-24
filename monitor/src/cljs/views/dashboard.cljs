@@ -19,11 +19,11 @@
         rp (get stats :registry-processor {})
         timeline @(rf/subscribe [::subs/timeline])
 
-        approved-orders (or (count (filter #(= "approved" (:status %)) timeline)) 0)
+        accepted-orders (or (count (filter #(= "accepted" (:status %)) timeline)) 0)
         denied-orders (or (count (filter #(= "denied" (:status %)) timeline)) 0)
         pending-orders (or (count (filter #(= "pending" (:status %)) timeline)) 0)
-        total-orders (+ approved-orders denied-orders pending-orders)
-        total-validated (+ approved-orders denied-orders)]
+        total-orders (+ accepted-orders denied-orders pending-orders)
+        total-validated (+ accepted-orders denied-orders)]
 
     [:div
      ;; First row - Main metrics
@@ -42,10 +42,10 @@
         :subtitle "In catalog"}]
       [stat-card
        {:title "Total Revenue"
-        :value (str "$" (.toFixed (or (:total-revenue qp) 0) 2))
+        :value (str "$" (.toFixed (or (:total-revenue-accepted qp) 0) 2))
         :icon "💰"
         :color "purple"
-        :subtitle "From approved orders"}]
+        :subtitle "From accepted orders"}]
       [stat-card
        {:title "Total Orders"
         :value total-orders
@@ -61,8 +61,8 @@
         :color "yellow"
         :subtitle "Awaiting validation"}]
       [stat-card
-       {:title "Approved Orders"
-        :value approved-orders
+       {:title "accepted Orders"
+        :value accepted-orders
         :icon "✓"
         :color "green"
         :subtitle "Validated & registered"}]
@@ -75,7 +75,7 @@
       [stat-card
        {:title "Approval Rate"
         :value (if (> total-validated 0)
-                 (str (.toFixed (* 100 (/ approved-orders total-validated)) 1) "%")
+                 (str (.toFixed (* 100 (/ accepted-orders total-validated)) 1) "%")
                  "N/A")
         :icon "📊"
         :color "blue"
@@ -103,7 +103,9 @@
                    (.json response)
                    (throw (js/Error. (str "HTTP error: " (.-status response)))))))
         (.then (fn [data]
-                 (js/console.log "Order updated successfully:" data)))
+                 (js/console.log "Order updated successfully:" data)
+                 ;;  (rf/dispatch [::events/fetch-stats])
+                 ))
         (.catch (fn [error]
                   (rf/dispatch [::events/update-timeline-status order-id old-status])
                   (rf/dispatch [::events/update-stats order-id new-status old-status])
@@ -121,7 +123,7 @@
           [:div.activity-item
            [:div.activity-icon
             (case (:status order)
-              "approved" "✓"
+              "accepted" "✓"
               "denied" "✗"
               "pending" "⏳"
               "📦")]
@@ -141,7 +143,7 @@
             (when (= "pending" (:status order))
               [:div {:style {:display "flex" :gap "0.5rem" :margin-top "0.5rem"}}
                [:button.btn.primary
-                {:on-click #(update-order-status! (:order-id order) "approved" timeline)
+                {:on-click #(update-order-status! (:order-id order) "accepted" timeline)
                  :style {:padding "0.375rem 0.75rem"
                          :font-size "0.875rem"
                          :background "#10b981"}}

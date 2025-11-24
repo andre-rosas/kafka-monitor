@@ -56,7 +56,10 @@
          [:table.sortable-table
           [:thead
            [:tr
-            [:th "Product ID"]
+            [:th {:on-click #(toggle-sort :product-id)
+                  :class (when (= @sort-key :product-id) "sorted")
+                  :style {:cursor "pointer"}}
+             "Product ID" (sort-indicator :product-id)]
             [:th {:on-click #(toggle-sort :total-quantity)
                   :class (when (= @sort-key :total-quantity) "sorted")
                   :style {:cursor "pointer"}}

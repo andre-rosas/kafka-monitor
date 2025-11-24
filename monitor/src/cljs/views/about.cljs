@@ -138,7 +138,7 @@
     [:ul
      [:li "Orders are auto-generated - no manual creation via UI"]
      [:li "No authentication or authorization"]
-     [:li "No order state transitions (pending → approved/denied)"]
+     [:li "No order state transitions (pending → accepted/denied)"]
      [:li "Limited error handling and retry logic"]
      [:li "No distributed tracing or comprehensive logging"]
      [:li "Registry processor validates but doesn't persist rejections"]
