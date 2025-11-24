@@ -165,7 +165,7 @@
                :quantity quantity
                :unit-price (utils/round unit-price 2)
                :total (utils/round (* quantity unit-price) 2)
-               :timestamp (utils/now-millis)
+               :timestamp (System/currentTimeMillis)
                :status (or status "pending")}]
     (validate-order! order)
     order))

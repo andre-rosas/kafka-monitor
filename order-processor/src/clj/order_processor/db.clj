@@ -2,7 +2,7 @@
   "Cassandra database operations for orders producer.
    
    This namespace handles:
-   - Connection to Cassandra keyspace 'orders_producer_store'
+   - Connection to Cassandra keyspace 'order_processor'
    - Saving sent orders (for tracking and recovery)
    - Querying order statistics
    - Pure functions for data transformation
@@ -27,35 +27,74 @@
 (defonce ^:private session (atom nil))
 
 (defn- create-session
-  "Create Cassandra session.
-   
-   Why use minimal Java interop here?
-   - Cassandra Java driver is the official client
-   - No mature pure-Clojure alternative exists
-   - We wrap it to provide Clojure-friendly API"
+  "Create Cassandra session."
   []
   (let [cassandra-cfg (config/cassandra-config)
+        host (:host cassandra-cfg)
         port-val (:port cassandra-cfg)
-
         port-int (if (string? port-val) (Integer/parseInt port-val) port-val)
-
-        contact-point (InetSocketAddress.
-                       (first (:contact-points cassandra-cfg))
-                       port-int)]
+        contact-point (InetSocketAddress. host port-int)]
+    (log/info "Creating Cassandra session" {:host host :port port-int :keyspace (:keyspace cassandra-cfg)})
     (-> (CqlSession/builder)
         (.addContactPoint contact-point)
         (.withLocalDatacenter (:datacenter cassandra-cfg))
         (.withKeyspace (:keyspace cassandra-cfg))
         (.build))))
 
+(defn- table-exists?
+  "Check if table exists in keyspace."
+  [session table-name]
+  (try
+    (let [result (.execute session
+                           (str "SELECT table_name FROM system_schema.tables "
+                                "WHERE keyspace_name = 'order_processor' "
+                                "AND table_name = '" table-name "'"))]
+      (-> result .one some?))
+    (catch Exception e
+      (log/error e "Error checking table existence" {:table table-name})
+      false)))
+
+(defn- create-schema!
+  "Create database schema if it doesn't exist."
+  [session]
+  (log/info "Checking order processor schema...")
+
+  (when-not (table-exists? session "orders")
+    (log/info "Creating table: orders")
+    (.execute session
+              "CREATE TABLE IF NOT EXISTS orders (
+                 order_id UUID PRIMARY KEY,
+                 customer_id INT,
+                 product_id TEXT,
+                 quantity INT,
+                 unit_price DECIMAL,
+                 total DECIMAL,
+                 timestamp TIMESTAMP,
+                 status TEXT
+               )"))
+
+  (try
+    (when-not (table-exists? session "orders_by_timestamp")
+      (log/info "Creating materialized view: orders_by_timestamp")
+      (.execute session
+                "CREATE MATERIALIZED VIEW IF NOT EXISTS orders_by_timestamp AS
+                     SELECT * FROM orders
+                     WHERE timestamp IS NOT NULL AND order_id IS NOT NULL
+                     PRIMARY KEY (timestamp, order_id)
+                     WITH CLUSTERING ORDER BY (order_id ASC)"))
+    (catch Exception e
+      (log/warn "Materialized views disabled, continuing without them: " (.getMessage e))))
+
+  (log/info "Order processor schema verification complete"))
+
 (defn connect!
-  "Initialize database connection.
-   
-   Idempotent - safe to call multiple times."
+  "Initialize database connection."
   []
   (when-not @session
     (log/info "Connecting to Cassandra" (config/cassandra-config))
-    (reset! session (create-session))
+    (let [s (create-session)]
+      (create-schema! s)
+      (reset! session s))
     (log/info "Connected to Cassandra")))
 
 (defn disconnect!
@@ -78,10 +117,7 @@
 ;; =============================================================================
 
 (defn order->cassandra-row
-  "Convert order map to Cassandra insert parameters.
-   
-   Pure function - no side effects.
-   Separates data transformation from database operations."
+  "Convert order map to Cassandra insert parameters."
   [order]
   [(UUID/fromString (:order-id order))
    (int (:customer-id order))
@@ -93,15 +129,13 @@
    (:status order)])
 
 (defn cassandra-row->order
-  "Convert Cassandra row to order map.
-   
-   Pure function - handles deserialization."
+  "Convert Cassandra row to order map."
   [row]
   {:order-id (str (.getUuid row "order_id"))
    :customer-id (.getInt row "customer_id")
    :product-id (.getString row "product_id")
    :quantity (.getInt row "quantity")
-   :unit-price (double (.getBigDecimal row "price"))
+   :unit-price (double (.getBigDecimal row "unit_price"))
    :total (double (.getBigDecimal row "total"))
    :timestamp (.toEpochMilli (.getInstant row "timestamp"))
    :status (.getString row "status")})
@@ -115,11 +149,9 @@
    VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
 
 (defn save-order!
-  "Save order to Cassandra.
-   
-   Validates order before saving."
+  "Save order to Cassandra."
   [order]
-  (model/validate-order! order) ;; The ! suffix indicates this function has side effects.
+  (model/validate-order! order)
   (let [session (get-session)
         statement (-> (SimpleStatement/newInstance
                        insert-order-cql
@@ -158,9 +190,7 @@
   "SELECT * FROM orders_by_timestamp LIMIT ?")
 
 (defn get-recent-orders
-  "Get N most recent orders.
-   
-   Uses materialized view 'orders_by_timestamp' for efficient querying."
+  "Get N most recent orders."
   [n]
   (let [session (get-session)
         statement (SimpleStatement/newInstance get-recent-orders-cql (to-array [n]))
@@ -178,10 +208,7 @@
    ALLOW FILTERING")
 
 (defn get-customer-stats
-  "Get aggregated statistics per customer.
-   
-   Note: Uses ALLOW FILTERING - not efficient on large datasets.
-   In production, use a separate stats table or stream processing."
+  "Get aggregated statistics per customer."
   []
   (let [session (get-session)
         statement (SimpleStatement/newInstance stats-by-customer-cql)

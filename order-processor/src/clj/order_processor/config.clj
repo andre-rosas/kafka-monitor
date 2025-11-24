@@ -7,7 +7,14 @@
   [_opts _tag [start end]]
   (vec (range start (inc end))))
 
-(def config (delay (aero/read-config (io/resource "config.edn"))))
+(def profile (keyword (or (System/getProperty "profile")
+                          (System/getenv "PROFILE")
+                          "dev")))
+
+(def config (delay
+              (aero/read-config
+               (io/resource "config.edn")
+               {:profile profile})))
 
 (defn get-config [& path]
   (get-in @config path))

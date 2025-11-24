@@ -61,7 +61,8 @@
   [props-map]
   (doto (Properties.)
     (#(doseq [[k v] props-map]
-        (.put % k v)))))
+        (when (and k v)
+          (.put % k v))))))
 
 (defn create-kafka-producer
   "Create Kafka producer with configuration.
@@ -105,17 +106,21 @@
    - Composable with other functions"
   []
   (let [orders-cfg (config/orders-config)
-        [min-cust max-cust] (:customer-id-range orders-cfg)
-        customer-id (+ min-cust (rand-int (- (inc max-cust) min-cust)))]
+        ;; [min-cust max-cust] (:customer-id-range orders-cfg)
+        customer-id (rand-nth (:customer-ids orders-cfg))
+        product-id (rand-nth (:product-ids orders-cfg))
+        quantity (+ (first (:quantity-range orders-cfg))
+                    (rand-int (- (second (:quantity-range orders-cfg))
+                                 (first (:quantity-range orders-cfg)))))
+        unit-price (+ (first (:price-range orders-cfg))
+                      (rand (- (second (:price-range orders-cfg))
+                               (first (:price-range orders-cfg)))))]
     (model/new-order
      {:customer-id customer-id
-      :product-id (rand-nth (:product-ids orders-cfg))
-      :quantity (+ (first (:quantity-range orders-cfg))
-                   (rand-int (- (second (:quantity-range orders-cfg))
-                                (first (:quantity-range orders-cfg)))))
-      :unit-price (+ (first (:price-range orders-cfg))
-                     (rand (- (second (:price-range orders-cfg))
-                              (first (:price-range orders-cfg)))))})))
+      :product-id product-id
+      :quantity quantity
+      :unit-price unit-price
+      :status "pending"})))
 
 ;; =============================================================================
 ;; Publishing (Side Effects Isolated)
@@ -138,36 +143,38 @@
    - Callback handles result when ready
    
    Returns: Nothing (async operation)"
-  [producer order]
-  (let [topics (get-in (config/kafka-config) [:topics])
-        key (:order-id order)
-        value (model/order->json order)
+  ([order]
+   (send-to-kafka! (:producer @app-state) order))
 
-        ;; Callback handles success/failure
-        callback (reify Callback
-                   (onCompletion [_ metadata exception]
-                     (if exception
-                       (do
-                         (log/error exception "Failed to send order" {:order-id (:order-id order)})
-                         (swap! app-state update-in [:stats :orders-failed] inc))
-                       (do
-                         (log/debug "Order sent successfully"
-                                    {:order-id (:order-id order)
-                                     :partition (.partition metadata)
-                                     :offset (.offset metadata)})
-                         (swap! app-state update-in [:stats :orders-sent] inc)
-                         (swap! app-state assoc-in [:stats :last-order-time] (System/currentTimeMillis))
+  ([producer order]
+   (let [topics (get-in (config/kafka-config) [:topics])
+         key (:order-id order)
+         value (model/order->json order)
 
-                         ;; Save to database after Kafka confirms
-                         (try
-                           (db/save-order! order)
-                           (catch Exception e
-                             (log/error e "Failed to save order to database" {:order-id (:order-id order)})))))))]
+         callback (reify Callback
+                    (onCompletion [_ metadata exception]
+                      (if exception
+                        (do
+                          (log/error exception "Failed to send order" {:order-id (:order-id order)})
+                          (swap! app-state update-in [:stats :orders-failed] inc))
+                        (do
+                          (log/debug "Order sent successfully"
+                                     {:order-id (:order-id order)
+                                      :partition (.partition metadata)
+                                      :offset (.offset metadata)})
+                          (swap! app-state update-in [:stats :orders-sent] inc)
+                          (swap! app-state assoc-in [:stats :last-order-time] (System/currentTimeMillis))
 
-    ;; ENVIA PARA TODOS OS TÓPICOS
-    (doseq [topic topics]
-      (let [record (ProducerRecord. topic key value)]
-        (.send producer record callback)))))
+                          ;; Save to database after Kafka confirms
+                          (try
+                            (db/save-order! order)
+                            (catch Exception e
+                              (log/error e "Failed to save order to database" {:order-id (:order-id order)})))))))]
+
+     ;; Send to all topics
+     (doseq [topic topics]
+       (let [record (ProducerRecord. topic key value)]
+         (.send producer record callback))))))
 
 ;; =============================================================================
 ;; Production Loop
