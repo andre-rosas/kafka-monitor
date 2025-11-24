@@ -28,7 +28,7 @@
 (s/def ::timestamp
   pos-int?) ;; "Timestamp in milliseconds as positive integer"
 (s/def ::status
-  #{"pending" "approved" "denied"}) ;; "Order status from predefined set of values" 
+  #{"pending" "accepted" "denied"}) ;; "Order status from predefined set of values" 
 
 (s/def ::order
   ;; "Complete order specification with all required attributes.
@@ -169,4 +169,4 @@
    :min-total 1.0
    :max-total 100000.0
    :price-tolerance 0.01    ; Allowable difference between calculated and provided total
-   :valid-statuses #{"pending" "approved" "denied"}})
+   :valid-statuses #{"pending" "accepted" "denied"}})
