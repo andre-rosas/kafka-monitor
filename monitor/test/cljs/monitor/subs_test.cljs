@@ -35,17 +35,17 @@
 (deftest stats-subscription-test
   (testing "::stats returns stats object from db"
     (let [test-db {:stats {:query-processor {:customer-count 10}
-                           :registry-processor {:approved-count 5}}}]
+                           :registry-processor {:accepted-count 5}}}]
       (with-redefs [rf/subscribe (fn [[sub-id]]
                                    (atom (get test-db (keyword (name sub-id)))))]
         (let [result @(rf/subscribe [::subs/stats])]
           (is (= 10 (get-in result [:query-processor :customer-count])))
-          (is (= 5 (get-in result [:registry-processor :approved-count]))))))))
+          (is (= 5 (get-in result [:registry-processor :accepted-count]))))))))
 
 (deftest timeline-subscription-test
   (testing "::timeline returns timeline array from db"
     (let [test-db {:timeline [{:order-id "order-1" :status "pending"}
-                              {:order-id "order-2" :status "approved"}]}]
+                              {:order-id "order-2" :status "accepted"}]}]
       (with-redefs [rf/subscribe (fn [[sub-id]]
                                    (atom (get test-db (keyword (name sub-id)))))]
         (let [result @(rf/subscribe [::subs/timeline])]

@@ -27,7 +27,7 @@
                                                  :product-count 10
                                                  :total-revenue 1000.0}}}])
     (rf/dispatch-sync [::events/fetch-timeline-success
-                       {:data [{:status "approved"}
+                       {:data [{:status "accepted"}
                                {:status "denied"}
                                {:status "pending"}]}])
 

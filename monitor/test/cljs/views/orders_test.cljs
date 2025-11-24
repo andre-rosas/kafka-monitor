@@ -24,7 +24,7 @@
                            :json (fn [] (js/Promise.resolve
                                          #js {:success true
                                               :data #js {:order-id "test-123"
-                                                         :status "approved"}}))})))
+                                                         :status "accepted"}}))})))
 
              (orders/search-order! "test-123" result loading error)
 

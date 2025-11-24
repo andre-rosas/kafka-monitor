@@ -27,12 +27,12 @@
   (testing "Event handler ::fetch-stats-success updates stats and loading"
     (let [initial-db {:loading? true :stats {} :error "old error"}
           response {:data {:query-processor {:customer-count 100}
-                           :registry-processor {:approved-count 50}}}
+                           :registry-processor {:accepted-count 50}}}
           result (events/fetch-stats-success initial-db [::events/fetch-stats-success response])]
       (is (false? (:loading? result)))
       (is (nil? (:error result)))
       (is (= 100 (get-in result [:stats :query-processor :customer-count])))
-      (is (= 50 (get-in result [:stats :registry-processor :approved-count]))))))
+      (is (= 50 (get-in result [:stats :registry-processor :accepted-count]))))))
 
 (deftest fetch-stats-failure-sets-error
   (testing "Event handler ::fetch-stats-failure sets error and stops loading"
@@ -45,7 +45,7 @@
   (testing "Event handler ::fetch-timeline-success updates timeline"
     (let [initial-db {:timeline []}
           response {:data [{:order-id "order-1" :status "pending"}
-                           {:order-id "order-2" :status "approved"}]}
+                           {:order-id "order-2" :status "accepted"}]}
           result (events/fetch-timeline-success initial-db [::events/fetch-timeline-success response])]
       (is (= 2 (count (:timeline result))))
       (is (= "order-1" (:order-id (first (:timeline result))))))))
@@ -72,29 +72,29 @@
   (testing "Event handler ::update-timeline-status changes order status in timeline"
     (let [initial-db {:timeline [{:order-id "order-1" :status "pending"}
                                  {:order-id "order-2" :status "pending"}]}
-          result (events/update-timeline-status initial-db [::events/update-timeline-status "order-1" "approved"])
+          result (events/update-timeline-status initial-db [::events/update-timeline-status "order-1" "accepted"])
           updated-order (first (filter #(= "order-1" (:order-id %)) (:timeline result)))]
-      (is (= "approved" (:status updated-order)))
+      (is (= "accepted" (:status updated-order)))
       (is (= "pending" (:status (second (:timeline result))))))))
 
 (deftest update-stats-increments-counts-correctly
   (testing "Event handler ::update-stats correctly updates approval counts"
-    (let [initial-db {:stats {:registry-processor {:approved-count 10
+    (let [initial-db {:stats {:registry-processor {:accepted-count 10
                                                    :denied-count 5
                                                    :pending-count 20}}}
-          result (events/update-stats initial-db [::events/update-stats "order-1" "pending" "approved"])
+          result (events/update-stats initial-db [::events/update-stats "order-1" "pending" "accepted"])
           rp (get-in result [:stats :registry-processor])]
-      (is (= 11 (:approved-count rp)))
+      (is (= 11 (:accepted-count rp)))
       (is (= 19 (:pending-count rp)))
       (is (= 5 (:denied-count rp)))))
 
   (testing "Event handler ::update-stats handles pending to denied"
-    (let [initial-db {:stats {:registry-processor {:approved-count 10
+    (let [initial-db {:stats {:registry-processor {:accepted-count 10
                                                    :denied-count 5
                                                    :pending-count 20}}}
           result (events/update-stats initial-db [::events/update-stats "order-1" "pending" "denied"])
           rp (get-in result [:stats :registry-processor])]
-      (is (= 10 (:approved-count rp)))
+      (is (= 10 (:accepted-count rp)))
       (is (= 6 (:denied-count rp)))
       (is (= 19 (:pending-count rp))))))
 
