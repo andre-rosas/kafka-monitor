@@ -17,9 +17,9 @@ COPY order-processor/ order-processor/
 COPY query-processor/ query-processor/
 COPY registry-processor/ registry-processor/
 
-# Run kafka.sh on render (Comment this if you use local)
-COPY kafka.sh .
-RUN chmod +x ./kafka.sh
+# # Run kafka.sh on render (Comment this if you use local)
+# COPY kafka.sh .
+# RUN chmod +x ./kafka.sh
 
 # Install Leiningen
 RUN curl -o /usr/local/bin/lein https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein && \

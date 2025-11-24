@@ -1,6 +1,5 @@
 (ns views.about
-  "About view - system documentation and architecture."
-  (:require [reagent.core :as r]))
+  "About view - system documentation and architecture.")
 
 (defn architecture-diagram []
   [:div.architecture-section
@@ -65,9 +64,9 @@
      [:ul
       [:li [:strong "Language:"] " Clojure 1.11"]
       [:li [:strong "Message Broker:"] " Apache Kafka 7.5"]
-      [:li [:strong "Database:"] " Cassandra 4.1"]
-      [:li [:strong "Cache:"] " Redis 7"]
-      [:li [:strong "Web Server:"] " Ring + Compojure + Jetty"]]]
+      [:li [:strong "Storage:"] " Cassandra 4.1 (3 keyspaces)"]
+      [:li [:strong "Web Server:"] " Ring + Compojure + Jetty"]
+      [:li [:strong "Materialized views:"] " In-app (no Redis/cache layer)"]]]
 
     [:div.tech-card
      [:h4 "Frontend"]
@@ -136,12 +135,12 @@
    [:div.info-box.warning
     [:p [:strong "This is an educational demo, not production-ready."]]
     [:ul
-     [:li "Orders are auto-generated - no manual creation via UI"]
+     [:li "Orders are auto-generated - no manual creation via UI (only manual overrides via API)"]
      [:li "No authentication or authorization"]
-     [:li "No order state transitions (pending → accepted/denied)"]
+     [:li "No automated order lifecycle transitions (pending → accepted/denied requires manual PUT)"]
      [:li "Limited error handling and retry logic"]
      [:li "No distributed tracing or comprehensive logging"]
-     [:li "Registry processor validates but doesn't persist rejections"]
+     [:li "Registry processor focuses on accepted orders; denied ones stay only in the timeline unless overridden"]
      [:li "No rate limiting or backpressure handling"]]]
 
    [:div.info-box.info
@@ -161,7 +160,7 @@
     [:h4 "Prerequisites"]
     [:pre "• Docker & Docker Compose
 - 8GB RAM minimum
-- Ports: 3000, 8080, 9042, 9092, 2181, 6379"]
+- Ports: 3000, 8080, 9042, 9092, 2181"]
 
     [:h4 "Quick Start"]
     [:pre "# Clone repository
