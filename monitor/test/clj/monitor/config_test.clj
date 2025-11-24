@@ -35,7 +35,8 @@
     (alter-var-root #'config/config (constantly (delay (mock-load-config :dev))))
 
     (testing "cassandra-config returns the correct map"
-      (is (= {:host "mockhost"} (config/cassandra-config))))
+      (is (= {:host "mockhost" :port nil :datacenter nil}
+             (config/cassandra-config))))
 
     (testing "server-config returns the correct map"
       (is (= {:port 9999} (config/server-config))))))

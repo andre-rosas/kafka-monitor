@@ -66,14 +66,14 @@
           "SELECT * FROM orders_timeline WHERE bucket_id = 0 ORDER BY timestamp DESC LIMIT ?"
           (create-mock-result-set
            (reify Row
-             (^String getString [_ ^String s] (case s "order_id" "timeline-order-1" "product_id" "P-B" "status" "pending"))
-             (^int getInt [_ ^String s] (case s "customer_id" 999))
-             (^double getDouble [_ ^String s] (case s "total" 50.0))
+             (^String getString [_ ^String s] (case s "order_id" "11111111-1111-1111-1111-111111111111" "product_id" "P-B" "status" "pending"))
+             (^int getInt [_ ^String s] (case s "customer_id" 999 "quantity" 5))
+             (^double getDouble [_ ^String s] (case s "total" 50.0 "unit_price" 10.0))
              (^Instant getInstant [_ ^String s] (Instant/ofEpochMilli 1700000000000))))
 
           (cond
-            (.startsWith query "UPDATE registered_orders SET status")
-            (do (swap! test-sessions update :updated-order (fn [o] (assoc (or o {}) :status (aget params 0))))
+            (.startsWith query "INSERT INTO registered_orders")
+            (do (swap! test-sessions assoc :updated-order {:order-id (aget params 0) :status (aget params 6)})
                 (create-mock-result-set nil))
 
             (.startsWith query "INSERT INTO registered_orders")
@@ -81,7 +81,7 @@
                 (create-mock-result-set nil))
 
             (.startsWith query "UPDATE validation_stats SET total_approved")
-            (do (swap! test-sessions assoc :validation-approved true)
+            (do (swap! test-sessions assoc :validation-accepted true)
                 (create-mock-result-set nil))
 
             (.startsWith query "UPDATE validation_stats SET total_rejected")
@@ -134,12 +134,12 @@
 
     (testing "row->registered-order"
       (let [mock-row (reify Row
-                       (^String getString [_ ^String s] (case s "order_id" (str mock-uuid) "product_id" "P-A" "status" "approved"))
+                       (^String getString [_ ^String s] (case s "order_id" (str mock-uuid) "product_id" "P-A" "status" "accepted"))
                        (^int getInt [_ ^String s] (case s "customer_id" 2 "quantity" 5 "version" 1))
-                       (^double getDouble [_ ^String s] (case s "total" 50.0))
+                       (^double getDouble [_ ^String s] (case s "total" 50.0 "unit_price" 10.0))
                        (^boolean getBoolean [_ ^String s] (case s "validation_passed" true))
                        (^Instant getInstant [_ ^String s] (case s "registered_at" mock-ts "updated_at" mock-ts)))]
-        (is (= {:order-id (str mock-uuid) :customer-id 2 :product-id "P-A" :quantity 5 :total 50.0 :status "approved"
+        (is (= {:order-id (str mock-uuid) :customer-id 2 :product-id "P-A" :quantity 5 :unit-price 10.0 :total 50.0 :status "accepted"
                 :registered-at 1700000000000 :updated-at 1700000000000 :version 1 :validation-passed true}
                (cass/row->registered-order mock-row)))))))
 
@@ -181,13 +181,13 @@
 (deftest registry-processor-queries-test
   (with-mock-cassandra
     (testing "update-order-status - existing order"
-      (is (true? (cass/update-order-status "11111111-1111-1111-1111-111111111111" "approved")))
-      (is (= "approved" (:status (:updated-order @test-sessions)))))
+      (is (true? (cass/update-order-status "11111111-1111-1111-1111-111111111111" "accepted")))
+      (is (= "accepted" (:status (:updated-order @test-sessions)))))
 
-    (testing "update-validation-stats! - approved"
-      (reset! test-sessions {:validation-approved false})
-      (cass/update-validation-stats! "approved")
-      (is (true? (:validation-approved @test-sessions))))
+    (testing "update-validation-stats! - accepted"
+      (reset! test-sessions {:validation-accepted false})
+      (cass/update-validation-stats! "accepted")
+      (is (true? (:validation-accepted @test-sessions))))
 
     (testing "update-validation-stats! - denied"
       (reset! test-sessions {:validation-rejected false})
@@ -197,17 +197,21 @@
 (deftest aggregated-stats-test
   (with-mock-cassandra
     (testing "get-all-stats returns correct structure"
-      (with-redefs [cass/get-all-customers (fn [] [{:customer-id 1 :total-spent 100.0} {:customer-id 2 :total-spent 50.0}])
-                    cass/get-all-products (fn [] [{:product-id "P1" :total-revenue 200.0} {:product-id "P2" :total-revenue 10.0}])
-                    cass/get-all-registered-orders (fn [] [{:status "approved"} {:status "denied"} {:status "pending"}])]
+      (with-redefs [cass/get-all-customers (fn [] [{:customer-id 1 :total-spent 100.0}
+                                                   {:customer-id 2 :total-spent 50.0}])
+                    cass/get-all-products (fn [] [{:product-id "P1" :total-revenue 200.0}
+                                                  {:product-id "P2" :total-revenue 10.0}])
+                    cass/get-all-registered-orders (fn [] [{:status "accepted" :total 100.0}
+                                                           {:status "denied" :total 50.0}
+                                                           {:status "pending" :total 25.0}])]
         (let [stats (cass/get-all-stats)]
           (is (contains? stats :query-processor))
           (is (= 2 (:customer-count (:query-processor stats))))
           (is (= 150.0 (:total-customers-spent (:query-processor stats))))
-          (is (= 210.0 (:total-revenue (:query-processor stats))))
+          (is (= 100.0 (:total-revenue-accepted (:query-processor stats))))
           (is (contains? stats :registry-processor))
           (is (= 3 (:registered-count (:registry-processor stats))))
-          (is (= 1 (:approved-count (:registry-processor stats))))
+          (is (= 1 (:accepted-count (:registry-processor stats))))
           (is (= 1 (:denied-count (:registry-processor stats))))
           (is (= 1 (:pending-count (:registry-processor stats))))
           (is (contains? stats :timestamp)))))))

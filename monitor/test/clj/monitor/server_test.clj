@@ -13,7 +13,7 @@
 
 (def mock-customer-stats {:customer-id 1 :total-spent 150.0})
 (def mock-product-stats {:product-id "P1" :total-revenue 500.0})
-(def mock-registered-order {:order-id (str (java.util.UUID/randomUUID)) :status "approved"})
+(def mock-registered-order {:order-id (str (java.util.UUID/randomUUID)) :status "accepted"})
 (def mock-timeline [{:order-id "TL-1"}])
 (def mock-order-history [{:version 1 :new-status "pending"}])
 (def mock-stats {:query-processor {:customer-count 1} :registry-processor {:registered-count 1}})
@@ -69,7 +69,7 @@
       (let [order-id "11111111-1111-1111-1111-111111111111"
             response (server/app (json-request :put
                                                (str "/api/orders/" order-id "/status")
-                                               {:status "approved"}))
+                                               {:status "accepted"}))
             body (parse-body response)]
         (is (= 200 (:status response)))
         (is (true? (:success body)))))
