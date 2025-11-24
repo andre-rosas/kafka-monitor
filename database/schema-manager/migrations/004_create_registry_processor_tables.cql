@@ -2,13 +2,14 @@
 -- Version: 4
 -- Description: Create tables for registry processor service
 
-USE registry_processor_store;
+USE registry_processor;
 
 CREATE TABLE IF NOT EXISTS registered_orders (
     order_id TEXT PRIMARY KEY,
     customer_id INT,
     product_id TEXT,
     quantity INT,
+    unit_price DOUBLE,
     total DOUBLE,
     status TEXT,
     registered_at TIMESTAMP,

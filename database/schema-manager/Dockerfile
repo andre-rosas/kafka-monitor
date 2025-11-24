@@ -3,7 +3,8 @@ FROM ubuntu:22.04
 # Install cqlsh and dependencies
 RUN apt-get update && \
     apt-get install -y python3-pip && \
-    pip3 install cqlsh
+    pip3 install cqlsh && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy migration scripts
 COPY migrations /migrations

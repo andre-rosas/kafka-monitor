@@ -2,7 +2,7 @@
 -- Version: 3
 -- Description: Create tables for query processor service
 
-USE query_processor_store;
+USE query_processor;
 
 CREATE TABLE IF NOT EXISTS orders_by_customer (
     customer_id INT PRIMARY KEY,
@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS orders_timeline (
     order_id TEXT,
     customer_id INT,
     product_id TEXT,
+    quantity INT,
+    unit_price DOUBLE,
     total DOUBLE,
     status TEXT,
     PRIMARY KEY (bucket_id, timestamp, order_id)

@@ -2,7 +2,7 @@
 -- Version: 2
 -- Description: Create tables for order processor service
 
-USE orders_producer_store;
+USE order_processor;
 
 CREATE TABLE IF NOT EXISTS orders (
     order_id UUID PRIMARY KEY,
