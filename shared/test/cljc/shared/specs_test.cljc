@@ -169,7 +169,7 @@
   (testing "Valid statuses"
     (log-verbose "Testing valid statuses")
     (is (s/valid? ::specs/status "pending"))
-    (is (s/valid? ::specs/status "approved"))
+    (is (s/valid? ::specs/status "accepted"))
     (is (s/valid? ::specs/status "denied")))
 
   (testing "Invalid statuses"
@@ -193,7 +193,7 @@
 
   (testing "Valid orders with different statuses"
     (log-verbose "Testing orders with different statuses")
-    (doseq [status ["pending" "approved" "denied"]]
+    (doseq [status ["pending" "accepted" "denied"]]
       (is (s/valid? ::specs/order (assoc valid-order-base :status status))
           (str "Order with status: " status))))
 
@@ -350,7 +350,7 @@
     (is (= 1.0 (:min-total specs/business-rules)))
     (is (= 100000.0 (:max-total specs/business-rules)))
     (is (= 0.01 (:price-tolerance specs/business-rules)))
-    (is (= #{"pending" "approved" "denied"} (:valid-statuses specs/business-rules))))
+    (is (= #{"pending" "accepted" "denied"} (:valid-statuses specs/business-rules))))
 
   (testing "Business rules align with specs"
     (log-verbose "Testing business rules alignment with specs")
@@ -361,7 +361,7 @@
 
     ;; Test that the spec validates the same set of statuses
     (is (s/valid? ::specs/status "pending"))
-    (is (s/valid? ::specs/status "approved"))
+    (is (s/valid? ::specs/status "accepted"))
     (is (s/valid? ::specs/status "denied"))
     (is (not (s/valid? ::specs/status "invalid-status")))))
 
