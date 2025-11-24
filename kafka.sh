@@ -55,7 +55,7 @@ create_topics() {
         --if-not-exists
     print_success "Created topic: orders (3 partitions)"
     
-    # Registry topic (approved orders)
+    # Registry topic (accepted orders)
     docker exec $KAFKA_CONTAINER kafka-topics \
         --bootstrap-server $KAFKA_INTERNAL \
         --create \
@@ -282,24 +282,38 @@ setup_all() {
 generate_test_data() {
     local count=${1:-10}
     print_info "Generating $count test orders..."
+
+    local products=("PROD-001" "PROD-002" "PROD-003" "PROD-004" "PROD-005")
     
     for i in $(seq 1 $count); do
         local customer_id=$((RANDOM % 100 + 1))
-        local product_id="PROD-$((RANDOM % 20 + 1))"
+        local product_id=${products[$((RANDOM % 5))]}
         local quantity=$((RANDOM % 10 + 1))
         local unit_price=$((RANDOM % 100 + 10))
         local total=$((quantity * unit_price))
-        local timestamp=$(date +%s)
-        local statuses=("pending" "accepted" "denied")
-        local status=${statuses[$((RANDOM % 4))]}
+        local timestamp=$(date +%s)000
+    #     local statuses=("pending" "accepted" "denied")
+    #     local status=${statuses[$((RANDOM % 4))]}
         
-        local message="{\"order-id\":\"ORDER-TEST-$i\",\"customer-id\":$customer_id,\"product-id\":\"$product_id\",\"quantity\":$quantity,\"unit-price\":$unit_price.0,\"total\":$total.0,\"timestamp\":$timestamp,\"status\":\"$status\"}"
+    #     local message="{\"order-id\":\"ORDER-TEST-$i\",\"customer-id\":$customer_id,\"product-id\":\"$product_id\",\"quantity\":$quantity,\"unit-price\":$unit_price.0,\"total\":$total.0,\"timestamp\":$timestamp,\"status\":\"$status\"}"
+        
+    #     echo "$message" | docker exec -i $KAFKA_CONTAINER kafka-console-producer \
+    #         --bootstrap-server $KAFKA_INTERNAL \
+    #         --topic orders
+        
+    #     echo "  ✓ Sent order: ORDER-TEST-$i"
+    # done
+    
+    # print_success "Generated $count test orders"
+        local uuid="ORD-$(date +%s%N | md5sum | head -c 8)-$RANDOM"
+
+        local message="{\"order-id\":\"$uuid\",\"customer-id\":$customer_id,\"product-id\":\"$product_id\",\"quantity\":$quantity,\"unit-price\":$unit_price.0,\"total\":$total.0,\"timestamp\":$timestamp,\"status\":\"pending\"}"
         
         echo "$message" | docker exec -i $KAFKA_CONTAINER kafka-console-producer \
             --bootstrap-server $KAFKA_INTERNAL \
             --topic orders
         
-        echo "  ✓ Sent order: ORDER-TEST-$i"
+        echo "  ✓ Sent order: $(uuidgen | cut -d'-' -f1)"
     done
     
     print_success "Generated $count test orders"
