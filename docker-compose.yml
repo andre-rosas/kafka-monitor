@@ -36,94 +36,62 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_INTERNAL://kafka:9093
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-      KAFKA_DELETE_TOPIC_ENABLE: "true"
-      KAFKA_LOG_RETENTION_HOURS: 168
-      KAFKA_LOG_SEGMENT_BYTES: 1073741824
-      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 300000
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
     volumes:
       - kafka_data:/var/lib/kafka/data
+      - kafka_logs:/var/lib/kafka/log
     networks:
       - kafka-network
     healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
-      interval: 10s
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
+      interval: 30s
       timeout: 10s
-      retries: 10
+      retries: 5
 
   cassandra:
     image: cassandra:4.1.7
     container_name: kafka-monitor-cassandra
+    environment:
+      CASSANDRA_START_RPC: "true"
+      CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+      CASSANDRA_CLUSTER_NAME: kafka-monitor
+      CASSANDRA_DC: datacenter1
     ports:
       - "9042:9042"
-      - "7199:7199" # JMX
-      - "9160:9160" # Thrift
-    environment:
-      CASSANDRA_CLUSTER_NAME: kafka_monitor_cluster
-      CASSANDRA_DC: datacenter1
-      CASSANDRA_RACK: rack1
-      CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
-      # CASSANDRA_START_WITH_MVIEW: true
-      CASSANDRA_NUM_TOKENS: 256
-      CASSANDRA_SEEDS: cassandra
-      MAX_HEAP_SIZE: 512M
-      HEAP_NEWSIZE: 128M
-      CASSANDRA_LISTEN_ADDRESS: auto
-      CASSANDRA_BROADCAST_ADDRESS: cassandra
-      CASSANDRA_RPC_ADDRESS: 0.0.0.0
-      CASSANDRA_BROADCAST_RPC_ADDRESS: cassandra
+      - "9160:9160"
+      - "7199:7199"
     volumes:
       - cassandra_data:/var/lib/cassandra
     networks:
       - kafka-network
     healthcheck:
-      test: ["CMD", "cqlsh", "-e", "describe keyspaces"]
-      interval: 15s
-      timeout: 20s
-      retries: 15
-      start_period: 60s
+      test: ["CMD", "cqlsh", "-u", "cassandra", "-p", "cassandra", "-e", "describe keyspaces"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
 
   cassandra-migrations:
     build:
       context: ./database/schema-manager
       dockerfile: Dockerfile
-    container_name: kafka-monitor-migrations
+    container_name: kafka-monitor-cassandra-migrations
+    volumes:
+      - ./database/schema-manager/migrations:/migrations:ro
     depends_on:
       cassandra:
         condition: service_healthy
+    networks:
+      - kafka-network
     environment:
       CASSANDRA_HOST: cassandra
       CASSANDRA_PORT: 9042
-    networks:
-      - kafka-network
-    restart: "no"    
-
-  redis:
-    image: redis:7-alpine
-    container_name: kafka-monitor-redis
-    ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
-    volumes:
-      - redis_data:/data
-    networks:
-      - kafka-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
-  # =============================================================================
-  # Microservices (Kafka Processors)
-  # =============================================================================
+      CASSANDRA_USERNAME: cassandra
+      CASSANDRA_PASSWORD: cassandra
+    restart: on-failure
 
   order-processor:
     build:
@@ -136,17 +104,22 @@ services:
       cassandra:
         condition: service_healthy
       cassandra-migrations:
-        condition: service_completed_successfully  
+        condition: service_completed_successfully
+    entrypoint: ["java", "-jar", "/app/order-processor.jar"]
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       CASSANDRA_HOST: cassandra
       CASSANDRA_PORT: 9042
-      CASSANDRA_DATACENTER: datacenter1
-      PRODUCER_ID: order-processor-1
-      KAFKA_TOPICS: "orders,registry"
+      SPRING_PROFILES_ACTIVE: dev
+      LOG_LEVEL: info
     networks:
       - kafka-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "exit 0"]
+      interval: 30s
+      timeout: 5s
+      retries: 1
 
   query-processor:
     build:
@@ -159,20 +132,22 @@ services:
       cassandra:
         condition: service_healthy
       cassandra-migrations:
-        condition: service_completed_successfully  
-      order-processor:
-        condition: service_started
+        condition: service_completed_successfully
+    entrypoint: ["java", "-jar", "/app/query-processor.jar"]
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       CASSANDRA_HOST: cassandra
       CASSANDRA_PORT: 9042
-      CASSANDRA_DATACENTER: datacenter1
-      PROCESSOR_ID: query-processor-1
-      KAFKA_TOPIC: "orders"
-      KAFKA_GROUP_ID: "query-processor"
+      SPRING_PROFILES_ACTIVE: dev
+      LOG_LEVEL: info
     networks:
       - kafka-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "exit 0"]
+      interval: 30s
+      timeout: 5s
+      retries: 1
 
   registry-processor:
     build:
@@ -185,21 +160,22 @@ services:
       cassandra:
         condition: service_healthy
       cassandra-migrations:
-        condition: service_completed_successfully  
-      order-processor:
-        condition: service_started
+        condition: service_completed_successfully
+    entrypoint: ["java", "-jar", "/app/registry-processor.jar"]
     environment:
-      PROFILE: prod
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       CASSANDRA_HOST: cassandra
       CASSANDRA_PORT: 9042
-      CASSANDRA_DATACENTER: datacenter1
-      PROCESSOR_ID: registry-processor-1
-      KAFKA_TOPIC: "registry"
-      KAFKA_GROUP_ID: "registry-processor"
+      SPRING_PROFILES_ACTIVE: dev
+      LOG_LEVEL: info
     networks:
       - kafka-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "exit 0"]
+      interval: 30s
+      timeout: 5s
+      retries: 1
 
   monitor:
     build:
@@ -207,20 +183,29 @@ services:
       dockerfile: monitor/Dockerfile
     container_name: kafka-monitor-monitor
     depends_on:
+      kafka:
+        condition: service_healthy
       cassandra:
         condition: service_healthy
       cassandra-migrations:
-        condition: service_completed_successfully  
+        condition: service_completed_successfully
     ports:
-      - "3000:8080"
+      - "3000:3449"
+      - "3449:3449"
     environment:
       CASSANDRA_HOST: cassandra
       CASSANDRA_PORT: 9042
-      CASSANDRA_DATACENTER: datacenter1
-      PORT: 8080
+      CASSANDRA_KEYSPACE: monitor
+      KAFKA_BROKER_HOST: kafka
+      KAFKA_BROKER_PORT: 9092
+      PROFILES_ACTIVE: dev
     networks:
       - kafka-network
     restart: unless-stopped
+    working_dir: /app/monitor
+    entrypoint: ["lein", "figwheel"]
+    tty: true
+    stdin_open: true
 
   # =============================================================================
   # Development Tools
@@ -254,24 +239,20 @@ services:
       - "8080:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: kafka-monitor
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9093
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
     networks:
       - kafka-network
     profiles:
       - dev
 
-# =============================================================================
-# Networks & Volumes
-# =============================================================================
-
-networks:
-  kafka-network:
-    driver: bridge
-
 volumes:
   zookeeper_data:
   zookeeper_logs:
   kafka_data:
+  kafka_logs:
   cassandra_data:
-  redis_data:
+
+networks:
+  kafka-network:
+    driver: bridge

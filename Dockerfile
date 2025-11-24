@@ -11,27 +11,32 @@ WORKDIR /app
 
 # Copy project files
 COPY project.clj .
-COPY resources/ resources/
-COPY src/ src/
-COPY test/ test/
+COPY shared/ shared/
+COPY monitor/ monitor/
+COPY order-processor/ order-processor/
+COPY query-processor/ query-processor/
+COPY registry-processor/ registry-processor/
 
 # Install Leiningen
 RUN curl -o /usr/local/bin/lein https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein && \
     chmod +x /usr/local/bin/lein
 
 # Download dependencies
-RUN lein deps
+RUN cd shared && lein install
 
 # Build application
-RUN lein compile
-RUN lein cljsbuild once min
+RUN lein sub deps
+RUN lein sub compile
+
+# Build the monitor frontend
+RUN cd monitor && lein cljsbuild once min
 
 # Create non-root user
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+RUN useradd -m -u 1001 appuser && chown -R appuser:appuser /app
 USER appuser
 
 # Expose port
 EXPOSE 3000
 
 # Command to start the application
-CMD ["lein", "run"]
+CMD ["lein", "run-monitor"]
