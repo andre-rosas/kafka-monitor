@@ -14,7 +14,7 @@
    :unit-price 30.0
    :total 150.0
    :timestamp 1234567890
-   :status "approved"})
+   :status "accepted"})
 
 (def minimal-order
   "Minimal valid order for boundary testing."
@@ -54,7 +54,7 @@
       (is (= "PROD-MODEL-001" (:product-id registered)) "Should preserve product ID")
       (is (= 5 (:quantity registered)) "Should preserve quantity")
       (is (= 150.0 (:total registered)) "Should preserve total")
-      (is (= "approved" (:status registered)) "Should set status to approved for validated orders")
+      (is (= "accepted" (:status registered)) "Should set status to accepted for validated orders")
       (is (= 1 (:version registered)) "New order should have version 1")
       (is (true? (:validation-passed registered)) "Should set validation-passed to true")
       (is (pos? (:registered-at registered)) "Should set registration timestamp")))
@@ -89,13 +89,13 @@
                          "ORDER-001"
                          2
                          "pending"
-                         "approved"
+                         "accepted"
                          "Status transition")]
 
       (is (= "ORDER-001" (:order-id update-record)) "Should set order ID")
       (is (= 2 (:version update-record)) "Should set version")
       (is (= "pending" (:previous-status update-record)) "Should set previous status")
-      (is (= "approved" (:new-status update-record)) "Should set new status")
+      (is (= "accepted" (:new-status update-record)) "Should set new status")
       (is (pos? (:updated-at update-record)) "Should set update timestamp")
       (is (= "Status transition" (:update-reason update-record)) "Should set update reason"))))
 
@@ -105,22 +105,22 @@
 
   (testing "Should update when status changes"
     (let [existing {:status "pending"}
-          new-order {:status "approved"}]
+          new-order {:status "accepted"}]
       (is (model/should-update-order? existing new-order) "Should update when status changes")))
 
   (testing "Should update when quantity changes"
-    (let [existing {:status "approved" :quantity 5 :total 150.0}
-          new-order {:status "approved" :quantity 10 :total 300.0}]
+    (let [existing {:status "accepted" :quantity 5 :total 150.0}
+          new-order {:status "accepted" :quantity 10 :total 300.0}]
       (is (model/should-update-order? existing new-order) "Should update when quantity changes")))
 
   (testing "Should update when total changes"
-    (let [existing {:status "approved" :quantity 5 :total 150.0}
-          new-order {:status "approved" :quantity 5 :total 200.0}]
+    (let [existing {:status "accepted" :quantity 5 :total 150.0}
+          new-order {:status "accepted" :quantity 5 :total 200.0}]
       (is (model/should-update-order? existing new-order) "Should update when total changes")))
 
   (testing "Should not update when order is unchanged"
-    (let [existing {:status "approved" :quantity 5 :total 150.0}
-          new-order {:status "approved" :quantity 5 :total 150.0}]
+    (let [existing {:status "accepted" :quantity 5 :total 150.0}
+          new-order {:status "accepted" :quantity 5 :total 150.0}]
       (is (not (model/should-update-order? existing new-order)) "Should not update unchanged order"))))
 
 (deftest serialization-deserialization-test

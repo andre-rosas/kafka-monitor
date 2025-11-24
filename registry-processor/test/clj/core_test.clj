@@ -22,7 +22,7 @@
    :unit-price 30.0
    :total 150.0
    :timestamp 1234567890
-   :status "approved"})
+   :status "accepted"})
 
 (def valid-registry-message
   {:order valid-order

@@ -22,7 +22,7 @@
    :unit-price 30.0
    :total 150.0
    :timestamp 1234567890
-   :status "approved"})
+   :status "accepted"})
 
 (def invalid-order
   "Sample invalid order for testing (exceeds quantity limit)."
@@ -33,7 +33,7 @@
    :unit-price 30.0
    :total 60000.0
    :timestamp 1234567890
-   :status "approved"})
+   :status "accepted"})
 
 (def mock-session
   "Mock Cassandra session for testing."
