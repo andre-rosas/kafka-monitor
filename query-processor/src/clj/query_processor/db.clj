@@ -4,7 +4,7 @@
   IMPORTANT: Although it does I/O with Cassandra, we try to keep the functions
   as pure as possible, receiving the session as a parameter and returning data.
   
-  Keyspace: query_processor_store
+  Keyspace: query_processor
   
   Tables:
   - orders_by_customer:  Aggregated statistics by customer
@@ -37,7 +37,7 @@
   (try
     (let [result (.execute session
                            (str "SELECT table_name FROM system_schema.tables "
-                                "WHERE keyspace_name = 'query_processor_store' "
+                                "WHERE keyspace_name = 'query_processor' "
                                 "AND table_name = '" table-name "'"))]
       (-> result .one some?))
     (catch Exception e
@@ -80,15 +80,17 @@
     (log/info "Creating table: orders_timeline")
     (.execute session
               "CREATE TABLE IF NOT EXISTS orders_timeline (
-         bucket_id INT,
-         timestamp TIMESTAMP,
-         order_id TEXT,
-         customer_id INT,
-         product_id TEXT,
-         total DOUBLE,
-         status TEXT,
-         PRIMARY KEY (bucket_id, timestamp, order_id)
-       ) WITH CLUSTERING ORDER BY (timestamp DESC)"))
+                   bucket_id INT,
+                   timestamp TIMESTAMP,
+                   order_id TEXT,
+                   customer_id INT,
+                   product_id TEXT,
+                   quantity INT,
+                   unit_price DOUBLE,
+                   total DOUBLE,
+                   status TEXT,
+                   PRIMARY KEY (bucket_id, timestamp, order_id)
+) WITH CLUSTERING ORDER BY (timestamp DESC)"))
 
   ;; Table processing_stats
   (when-not (table-exists? session "processing_stats")
@@ -115,7 +117,7 @@
              {:host \"localhost\"
               :port 9042
               :datacenter \"datacenter1\"
-              :keyspace \"query_processor_store\"}
+              :keyspace \"query_processor\"}
     
   Returns:
     CqlSession (Java object from Cassandra driver)
@@ -211,8 +213,8 @@
    :insert-timeline
    (.prepare session
              "INSERT INTO orders_timeline
-                 (bucket_id, timestamp, order_id, customer_id, product_id, total, status)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)")
+                 (bucket_id, timestamp, order_id, customer_id, product_id, quantity, unit_price, total, status)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
 
    :get-timeline
    (.prepare session
@@ -436,8 +438,10 @@
         (.setString 2 (:order-id entry))
         (.setInt 3 (:customer-id entry))
         (.setString 4 (:product-id entry))
-        (.setDouble 5 (:total entry))
-        (.setString 6 (:status entry))
+        (.setInt 5 (:quantity entry))
+        (.setDouble 6 (:unit-price entry))
+        (.setDouble 7 (:total entry))
+        (.setString 8 (:status entry))
         (->> (.execute session)))))
 
 (defn get-timeline
@@ -608,7 +612,7 @@
   (def session (create-session {:host "localhost"
                                 :port 9042
                                 :datacenter "datacenter1"
-                                :keyspace "query_processor_store"}))
+                                :keyspace "query_processor"}))
 
   ;; Prepare statements
   (def stmts (prepare-statements session))

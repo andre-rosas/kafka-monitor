@@ -297,6 +297,8 @@
 ;; COMPOSITION: Complete Aggregation
 ;; =============================================================================
 
+(declare add-revenue)
+
 (defn aggregate-order
   "High-level function that aggregates an order in ALL views.
   
@@ -354,7 +356,9 @@
 
       ;; Always increments processed counter
       true
-      (update :processing-stats increment-processed))))
+      (update :processing-stats increment-processed)
+      true
+      (update :processing-stats add-revenue order))))
 
 (defn aggregate-order-batch
   "Aggregates a batch of orders at once.
@@ -378,6 +382,13 @@
      (aggregate-order current-views order config))
    views
    orders))
+
+(defn add-revenue
+  "Adds revenue from an accepted order to total revenue."
+  [stats order]
+  (if (= "accepted" (:status order))
+    (update stats :total-revenue-accepted (fnil + 0) (:total order))
+    stats))
 
 ;; =============================================================================
 ;; HELPERS: Initialization

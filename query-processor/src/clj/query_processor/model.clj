@@ -98,6 +98,8 @@
   (s/keys :req-un [::order-id
                    ::customer-id
                    ::product-id
+                   ::quantity
+                   ::unit-price
                    ::total
                    ::status
                    ::timestamp]))
@@ -115,6 +117,7 @@
 (s/def ::error-count nat-int?)
 (s/def ::last-processed-timestamp pos-int?)
 (s/def ::processor-id string?)
+(s/def ::total-revenue-accepted (s/and number? (complement neg?)))
 
 (s/def ::processing-stats
   ;; "Query-processor internal metrics.
@@ -122,6 +125,7 @@
   (s/keys :req-un [::processor-id
                    ::processed-count
                    ::error-count
+                   ::total-revenue-accepted
                    ::last-processed-timestamp]))
 
 ;; =============================================================================
@@ -304,7 +308,7 @@
     (extract-timeline-entry full-order)
     ;; => {:order-id \"123\" :customer-id 42 :product-id \"PROD-001\" ...}"
   [order]
-  (select-keys order [:order-id :customer-id :product-id :total :status :timestamp]))
+  (select-keys order [:order-id :customer-id :product-id :quantity :unit-price :total :status :timestamp]))
 
 (comment
   ;; Usage examples (for development)

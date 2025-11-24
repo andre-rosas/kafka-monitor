@@ -17,7 +17,7 @@
   :datacenter #profile {:dev "datacenter1"
                         :test "datacenter1"
                         :prod #env CASSANDRA_DATACENTER}
-  :keyspace "query_processor_store"}
+  :keyspace "query_processor"}
 
  :processor
  {:processor-id #profile {:dev "query-processor-dev-1"

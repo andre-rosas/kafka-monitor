@@ -76,7 +76,7 @@
     {:host \"localhost\"
      :port 9042
      :datacenter \"datacenter1\"
-     :keyspace \"query_processor_store\"}"
+     :keyspace \"query_processor\"}"
   []
   (:cassandra @config))
 
