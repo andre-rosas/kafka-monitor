@@ -2,8 +2,8 @@
   "Cassandra queries for monitor API.
   
   Connects to all three keyspaces:
-  - query_processor_store
-  - registry_processor_store"
+  - query_processor
+  - registry_processor"
   (:require [monitor.config :as config]
             [clojure.tools.logging :as log])
   (:import [com.datastax.oss.driver.api.core CqlSession]
@@ -74,6 +74,8 @@
   {:order-id (.getString row "order_id")
    :customer-id (.getInt row "customer_id")
    :product-id (.getString row "product_id")
+   :quantity (.getInt row "quantity")
+   :unit-price (.getDouble row "unit_price")
    :total (.getDouble row "total")
    :status (.getString row "status")
    :timestamp (when-let [ts (.getInstant row "timestamp")]
@@ -84,6 +86,7 @@
    :customer-id (.getInt row "customer_id")
    :product-id (.getString row "product_id")
    :quantity (.getInt row "quantity")
+   :unit-price (.getDouble row "unit_price")
    :total (.getDouble row "total")
    :status (.getString row "status")
    :registered-at (when-let [ts (.getInstant row "registered_at")]
@@ -107,9 +110,9 @@
 ;; =============================================================================
 
 (defn get-customer-stats
-  "Get customer statistics by ID from query_processor_store."
+  "Get customer statistics by ID from query_processor."
   [customer-id]
-  (let [session (get-session "query_processor_store")
+  (let [session (get-session "query_processor")
         query "SELECT * FROM orders_by_customer WHERE customer_id = ?"
         result (.execute session (SimpleStatement/newInstance query (into-array Object [(int customer-id)])))
         row (.one result)]
@@ -117,9 +120,9 @@
       (row->customer-stats row))))
 
 (defn get-product-stats
-  "Get product statistics by ID from query_processor_store."
+  "Get product statistics by ID from query_processor."
   [product-id]
-  (let [session (get-session "query_processor_store")
+  (let [session (get-session "query_processor")
         query "SELECT * FROM orders_by_product WHERE product_id = ?"
         result (.execute session (SimpleStatement/newInstance query (into-array Object [product-id])))
         row (.one result)]
@@ -127,9 +130,9 @@
       (row->product-stats row))))
 
 (defn get-timeline
-  "Get orders timeline from query_processor_store."
+  "Get orders timeline from query_processor."
   [limit]
-  (let [session (get-session "query_processor_store")
+  (let [session (get-session "query_processor")
         query "SELECT * FROM orders_timeline WHERE bucket_id = 0 ORDER BY timestamp DESC LIMIT ?"
         result (.execute session (SimpleStatement/newInstance query (into-array Object [(int limit)])))]
     (->> result
@@ -137,9 +140,9 @@
          (vec))))
 
 (defn get-all-customers
-  "Get all customer statistics from query_processor_store."
+  "Get all customer statistics from query_processor."
   []
-  (let [session (get-session "query_processor_store")
+  (let [session (get-session "query_processor")
         result (.execute session (SimpleStatement/newInstance "SELECT * FROM orders_by_customer"))]
     (->> result
          (map row->customer-stats)
@@ -154,9 +157,9 @@
        (vec)))
 
 (defn get-all-products
-  "Get all product statistics from query_processor_store."
+  "Get all product statistics from query_processor."
   []
-  (let [session (get-session "query_processor_store")
+  (let [session (get-session "query_processor")
         result (.execute session (SimpleStatement/newInstance "SELECT * FROM orders_by_product"))]
     (->> result
          (map row->product-stats)
@@ -167,27 +170,22 @@
 ;; =============================================================================
 
 (defn get-registered-order
-  "Get registered order by ID from registry_processor_store."
+  "Get registered order by ID from registry_processor."
   [order-id]
   (try
-    (let [session (get-session "registry_processor_store")
-          order-uuid (java.util.UUID/fromString order-id)
+    (let [session (get-session "registry_processor")
           query "SELECT * FROM registered_orders WHERE order_id = ?"
-          result (.execute session (SimpleStatement/newInstance query (into-array Object [order-uuid])))
-          row (.one result)]
-      (when row
+          result (.execute session (SimpleStatement/newInstance query (into-array Object [order-id])))]  ;; ← MUDANÇA: usar STRING direto
+      (when-let [row (.one result)]
         (row->registered-order row)))
-    (catch IllegalArgumentException e
-      (log/error "Invalid UUID format" {:order-id order-id})
-      nil)
     (catch Exception e
       (log/error e "Error getting registered order" {:order-id order-id})
       nil)))
 
 (defn get-order-history
-  "Get order update history from registry_processor_store."
+  "Get order update history from registry_processor."
   [order-id]
-  (let [session (get-session "registry_processor_store")
+  (let [session (get-session "registry_processor")
         order-uuid (java.util.UUID/fromString order-id)
         query "SELECT * FROM order_updates WHERE order_id = ?"
         result (.execute session (SimpleStatement/newInstance query (into-array Object [order-uuid])))]
@@ -196,57 +194,53 @@
          (vec))))
 
 (defn get-all-registered-orders
-  "Get all registered orders from registry_processor_store."
+  "Get all registered orders from registry_processor."
   []
-  (let [session (get-session "registry_processor_store")
+  (let [;; session (get-session "registry_processor")
+        session (get-session "registry_processor")
         result (.execute session (SimpleStatement/newInstance "SELECT * FROM registered_orders"))]
     (->> result
          (map row->registered-order)
          (vec))))
 
 (defn update-order-status
-  "Update status of a registered order. Creates it from timeline data if it doesn't exist."
+  "Update status of an order. Creates in registered_orders if doesn't exist."
   [order-id new-status]
   (try
-    (let [session (get-session "registry_processor_store")
+    (let [session-registry (get-session "registry_processor")
+          session-query (get-session "query_processor")
           order-uuid (java.util.UUID/fromString order-id)
 
-          ; Check if it already exists
-          existing (get-registered-order order-id)]
+          ;; search order from timeline
+          timeline (get-timeline 1000)
+          order (first (filter #(= order-id (:order-id %)) timeline))]
 
-      (if existing
-        ; If it exists, update it
-        (let [update-query "UPDATE registered_orders SET status = ?, updated_at = toTimestamp(now()), version = version + 1 WHERE order_id = ?"]
-          (.execute session (SimpleStatement/newInstance update-query (into-array Object [new-status order-uuid])))
-          (log/info "Updated order status" {:order-id order-id :new-status new-status}))
-
-        ; If it doesn't exist, create it by searching timeline data
-        (let [timeline (get-timeline 100)
-              order (first (filter #(= order-id (:order-id %)) timeline))]
-          (if order
-            (let [insert-query "INSERT INTO registered_orders (order_id, customer_id, product_id, quantity, total, status, registered_at, updated_at, version, validation_passed) VALUES (?, ?, ?, ?, ?, ?, toTimestamp(now()), toTimestamp(now()), 1, ?)"]
-              (.execute session (SimpleStatement/newInstance insert-query
-                                                             (into-array Object [order-uuid
-                                                                                 (:customer-id order)
-                                                                                 (:product-id order)
-                                                                                 1  ; quantity default
-                                                                                 (:total order)
-                                                                                 new-status
-                                                                                 (= new-status "approved")])))
-              (log/info "Created new registered order" {:order-id order-id :new-status new-status}))
-            (do
-              (log/warn "Order not found in timeline" {:order-id order-id})
-              (throw (Exception. (str "Order not found in timeline: " order-id)))))))
-
-      true)
+      (if order
+        (let [;; if does not exist in registered_orders, creates
+              insert-query "INSERT INTO registered_orders (order_id, customer_id, product_id, quantity, unit_price, total, status, registered_at, updated_at, version, validation_passed) VALUES (?, ?, ?, ?, ?, ?, ?, toTimestamp(now()), toTimestamp(now()), 1, ?)"]
+          (.execute session-registry
+                    (SimpleStatement/newInstance insert-query
+                                                 (into-array Object [order-id
+                                                                     (:customer-id order)
+                                                                     (:product-id order)
+                                                                     (or (:quantity order) 0)
+                                                                     (or (:unit-price order) 0.0)
+                                                                     (:total order)
+                                                                     new-status
+                                                                     (= new-status "accepted")])))
+          (log/info "Created/updated order in registered_orders" {:order-id order-id :status new-status})
+          true)
+        (do
+          (log/warn "Order not found in timeline" {:order-id order-id})
+          false)))
     (catch Exception e
       (log/error e "Error updating order status" {:order-id order-id :new-status new-status})
       false)))
 
 (defn get-orders-by-status
-  "Get registered orders by status from registry_processor_store."
+  "Get registered orders by status from registry_processor."
   [status limit]
-  (let [session (get-session "registry_processor_store")
+  (let [session (get-session "registry_processor")
         query "SELECT * FROM registered_orders WHERE status = ? LIMIT ?"
         result (.execute session (SimpleStatement/newInstance query (into-array Object [status (int limit)])))]
     (->> result
@@ -254,12 +248,12 @@
          (vec))))
 
 (defn update-validation-stats!
-  "Increments the validation counters in registry_processor_store.validation_stats."
+  "Increments the validation counters in registry_processor.validation_stats."
   [status]
-  (let [session (get-session "registry_processor_store")
+  (let [session (get-session "registry_processor")
         processor-id "monitor-api"
 
-        approved-query (if (= status "approved")
+        approved-query (if (= status "accepted")
                          "total_approved = total_approved + 1,"
                          "")
         rejected-query (if (= status "denied")
@@ -286,25 +280,52 @@
   (try
     (let [customers (get-all-customers)
           products (get-all-products)
+          ;; registered (get-all-registered-orders)
           registered (get-all-registered-orders)
 
-          ;; Count by STATUS (approved, denied, pending)
-          approved-count (count (filter #(= "approved" (:status %)) registered))
+          ;; Count by STATUS (accepted, denied, pending)
+          accepted-orders (filter #(= "accepted" (:status %)) registered)
           denied-count (count (filter #(= "denied" (:status %)) registered))
-          pending-count (count (filter #(= "pending" (:status %)) registered))]
+          pending-count (count (filter #(= "pending" (:status %)) registered))
+
+          accepted-count (count accepted-orders)
+          total-revenue-accepted (reduce + 0.0 (map :total accepted-orders))]
 
       {:query-processor {:customer-count (count customers)
                          :product-count (count products)
                          :total-customers-spent (reduce + 0.0 (map :total-spent customers))
-                         :total-revenue (reduce + 0.0 (map :total-revenue products))}
+                         :total-revenue-accepted total-revenue-accepted}
        :registry-processor {:registered-count (count registered)
-                            :approved-count approved-count
+                            :accepted-count accepted-count
                             :denied-count denied-count
                             :pending-count pending-count}
        :timestamp (System/currentTimeMillis)})
     (catch Exception e
       (log/error e "Error fetching aggregated stats")
       {})))
+
+(defn get-recent-orders
+  "Fetch the last N orders from the orders table in order_processor.
+   WARNING: Use only for dev/demo. Full scan on non-partition key is expensive."
+  [limit]
+  (let [session (get-session "order_processor")
+        cql (str "SELECT order_id, customer_id, product_id, quantity, total, timestamp, status "
+                 "FROM orders "
+                 "LIMIT ?")
+        rs (.execute session (SimpleStatement/newInstance cql (to-array [limit])))]
+    (->> rs
+         (.currentPage)
+         (map #(hash-map
+                :order-id (str (.getUuid % "order_id"))
+                :customer-id (.getInt % "customer_id")
+                :product-id (.getString % "product-id")
+                :quantity (.getInt % "quantity")
+                :unit-price (.getDecimal % "unit_price")
+                :total (.getDecimal % "total")
+                :timestamp (when-let [ts (.getInstant % "timestamp")]
+                             (.toEpochMilli ts))
+                :status (.getString % "status")))
+         (vec))))
 
 (defn get-top-customers
   "Get top N customers by total spent."
@@ -334,7 +355,7 @@
   "Check if Cassandra is reachable by executing a simple query."
   []
   (try
-    (let [session (get-session "query_processor_store")]
+    (let [session (get-session "query_processor")]
       (.execute session (SimpleStatement/newInstance "SELECT now() FROM system.local"))
       true)
     (catch Exception e
@@ -342,7 +363,19 @@
       false)))
 
 (defn get-timeline-with-status
-  "Get timeline WITHOUT joining with registered_orders (too slow)."
+  "Get timeline WITH status from registered_orders."
   [limit]
-  ;; return the timeline
-  (get-timeline limit))
+  (let [timeline (get-timeline limit)
+        registered (get-all-registered-orders)
+        ;; Crates a map for order-id -> registered-order to quick lookup
+        registered-map (into {} (map (juxt :order-id identity) registered))]
+
+    ;; For each order in timeline, updates with registered data, if exists
+    (->> timeline
+         (map (fn [order]
+                (if-let [reg (get registered-map (:order-id order))]
+                  ;; if data exists in registered, uses status, quantity e unit-price from tehre.
+                  (merge order (select-keys reg [:status :quantity :unit-price]))
+                  ;; if does not, keep it as 'pending'.
+                  order)))
+         (vec))))

@@ -28,9 +28,17 @@
 (def config (delay (load-config (get-profile)))) ; Lazy load the configuration
 
 (defn cassandra-config
-  "Returns the Cassandra configuration map."
+  "Returns the Cassandra configuration map, prioritizing ENV vars."
   []
-  (:cassandra @config))
+  (let [config-map (:cassandra @config)
+        env-host (get-env-var "CASSANDRA_HOST")
+        env-port (get-env-var "CASSANDRA_PORT")
+        env-datacenter (get-env-var "CASSANDRA_DATACENTER")]
+
+    (-> config-map
+        (assoc :host (or env-host (:host config-map)))
+        (assoc :port (or env-port (:port config-map)))
+        (assoc :datacenter (or env-datacenter (:datacenter config-map))))))
 
 (defn server-config
   "Returns the server configuration map."

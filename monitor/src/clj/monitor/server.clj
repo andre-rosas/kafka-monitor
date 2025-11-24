@@ -138,6 +138,16 @@
       (-> (response {:success false :error (.getMessage e)})
           (status 500)))))
 
+(defn get-orders-handler
+  "Fetch the list of recent orders."
+  [_request]
+  (try
+    (let [orders (cass/get-recent-orders 100)]
+      (response {:status "success" :data orders}))
+    (catch Exception e
+      (log/error e "Error fetching orders")
+      (status (response {:status "error" :message "Failed to fetch orders."}) 500))))
+
 (defn search-products-handler
   "Search products by ID or return top N."
   [{:keys [params]}]
@@ -204,14 +214,14 @@
   (try
     (let [order-id (:id params)
           new-status (:status body)]
-      (if (contains? #{"approved" "denied"} new-status)
+      (if (contains? #{"accepted" "denied"} new-status)
         (do
           (cass/update-order-status order-id new-status)
           (response {:success true
                      :message (str "Order " order-id " updated to " new-status)
                      :order-id order-id
                      :status new-status}))
-        (-> (response {:success false :error "Invalid status. Use 'approved' or 'denied'"})
+        (-> (response {:success false :error "Invalid status. Use 'accepted' or 'denied'"})
             (status 400))))
     (catch Exception e
       (log/error e "Error updating order status" {:params params :body body})
@@ -246,7 +256,7 @@
           (status 500)))))
 
 (defn search-order-handler
-  "Search order - PRIORIZA registered_orders sobre timeline."
+  "Search order - PRIORIZES registered_orders sobre timeline."
   [{:keys [params]}]
   (try
     (let [order-id (:id params)
@@ -342,6 +352,7 @@
   (GET "/api/customers/top" [] get-top-customers-handler)
   (GET "/api/customers/search" [] search-customers-handler)
   (GET "/api/customers/:id" [] get-customer-handler)
+  (GET "/api/orders" [] get-orders-handler)
 
   ;; Products
   (GET "/api/products/top" [] get-top-products-handler)
