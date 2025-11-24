@@ -73,7 +73,7 @@
          :order-id (:order-id order)}))))
 
 ;; =============================================================================
-;; Command: Register (save approved order to Cassandra)
+;; Command: Register (save accepted order to Cassandra)
 ;; =============================================================================
 
 (defmethod execute :register

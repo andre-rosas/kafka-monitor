@@ -1,5 +1,5 @@
 (defproject registry-processor "0.1.0-SNAPSHOT"
-  :description "Kafka consumer/producer that validates orders and registers approved ones"
+  :description "Kafka consumer/producer that validates orders and registers accepted ones"
   :url "https://github.com/andre-rosas/kafka-monitor"
 
   :dependencies [[org.clojure/clojure "1.11.3"]

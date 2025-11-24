@@ -1,7 +1,7 @@
 (ns registry-processor.db
   "Cassandra database operations for registry-processor.
   
-  Keyspace: registry_processor_store
+  Keyspace: registry_processor
   
   Tables:
   - registered_orders: Approved orders that passed validation
@@ -24,7 +24,7 @@
   (try
     (let [result (.execute session
                            (str "SELECT table_name FROM system_schema.tables "
-                                "WHERE keyspace_name = 'registry_processor_store' "
+                                "WHERE keyspace_name = 'registry_processor' "
                                 "AND table_name = '" table-name "'"))]
       (-> result .one some?))
     (catch Exception e
@@ -123,9 +123,9 @@
   {:upsert-registered-order
    (.prepare session
              "INSERT INTO registered_orders 
-              (order_id, customer_id, product_id, quantity, total, status, 
-               registered_at, updated_at, version, validation_passed)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+              (order_id, customer_id, product_id, quantity, unit_price, total, status, 
+              registered_at, updated_at, version, validation_passed)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
 
    :get-registered-order
    (.prepare session
@@ -207,6 +207,7 @@
                                                   (int (:customer-id registered-order))
                                                   (:product-id registered-order)
                                                   (int (:quantity registered-order))
+                                                  (double (:unit-price registered-order))
                                                   (double (:total registered-order))
                                                   (:status registered-order)
                                                   (Instant/ofEpochMilli (:registered-at registered-order))
@@ -281,7 +282,7 @@
   (def session (create-session {:host "localhost"
                                 :port 9042
                                 :datacenter "datacenter1"
-                                :keyspace "registry_processor_store"}))
+                                :keyspace "registry_processor"}))
 
   (def stmts (prepare-statements session))
 

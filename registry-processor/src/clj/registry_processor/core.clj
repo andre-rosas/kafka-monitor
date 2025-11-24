@@ -26,7 +26,7 @@
 ;; =============================================================================
 
 (defn retry-with-backoff
-  "Executa uma função com retry e backoff exponencial."
+  "Execute function with retry and exponential backoff."
   [f max-retries initial-delay-ms max-delay-ms]
   (loop [attempt 1
          delay-ms initial-delay-ms]
@@ -124,7 +124,7 @@
 ;; =============================================================================
 
 (defn process-order-record
-  "Process order from 'orders' topic: validate and send to 'registry' if approved."
+  "Process order from 'orders' topic: validate and send to 'registry' if accepted."
   [context ^ConsumerRecord record]
   (try
     (let [{:keys [producer registry-topic]} context
@@ -282,43 +282,49 @@
       (log/info "Connecting to Cassandra (with retry)...")
       (let [session (retry-with-backoff
                      #(db/create-session cassandra-cfg)
-                     10 2000 30000)
-
-            prepared-stmts (db/prepare-statements session)]
+                     10 2000 30000)]
 
         (log/info "Connected to Cassandra successfully!")
 
-        (let [consumer (create-consumer consumer-cfg)
-              producer (create-producer producer-cfg)
-              topics (:topics consumer-cfg)
-              registry-topic (:registry-topic producer-cfg)]
+        (log/info "Creating schema if not exists...")
+        (db/create-schema! session)
+        (log/info "Schema verification complete")
 
-          (subscribe-topics consumer topics)
+        (let [prepared-stmts (db/prepare-statements session)]
 
-          (let [stats-atom (atom (model/new-validation-stats processor-id))
+          (log/info "Prepared statements ready")
 
-                context {:session session
-                         :prepared-stmts prepared-stmts
-                         :stats-atom stats-atom
-                         :producer producer
-                         :registry-topic registry-topic
-                         :processor-config processor-cfg}
+          (let [consumer (create-consumer consumer-cfg)
+                producer (create-producer producer-cfg)
+                topics (:topics consumer-cfg)
+                registry-topic (:registry-topic producer-cfg)]
 
-                running-atom (atom true)
-                consumer-thread (Thread. #(consumer-loop consumer context running-atom))]
+            (subscribe-topics consumer topics)
 
-            (.start consumer-thread)
+            (let [stats-atom (atom (model/new-validation-stats processor-id))
 
-            (log/info "Registry-processor started" {:processor-id processor-id})
+                  context {:session session
+                           :prepared-stmts prepared-stmts
+                           :stats-atom stats-atom
+                           :producer producer
+                           :registry-topic registry-topic
+                           :processor-config processor-cfg}
 
-            {:consumer consumer
-             :producer producer
-             :session session
-             :prepared-stmts prepared-stmts
-             :stats-atom stats-atom
-             :context context
-             :running-atom running-atom
-             :consumer-thread consumer-thread}))))
+                  running-atom (atom true)
+                  consumer-thread (Thread. #(consumer-loop consumer context running-atom))]
+
+              (.start consumer-thread)
+
+              (log/info "Registry-processor started" {:processor-id processor-id})
+
+              {:consumer consumer
+               :producer producer
+               :session session
+               :prepared-stmts prepared-stmts
+               :stats-atom stats-atom
+               :context context
+               :running-atom running-atom
+               :consumer-thread consumer-thread})))))
 
     (catch Exception e
       (log/error e "Failed to start registry-processor")

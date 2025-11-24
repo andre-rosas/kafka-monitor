@@ -22,7 +22,7 @@
   :datacenter #profile {:dev "datacenter1"
                         :test "datacenter1"
                         :prod #env CASSANDRA_DATACENTER}
-  :keyspace "registry_processor_store"}
+  :keyspace "registry_processor"}
 
  :processor
  {:processor-id #profile {:dev "registry-processor-dev-1"

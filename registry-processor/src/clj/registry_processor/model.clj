@@ -17,7 +17,7 @@
 (s/def ::unit-price (s/and number? pos?))
 (s/def ::total (s/and number? pos?))
 (s/def ::timestamp pos-int?)
-(s/def ::status #{"pending" "denied" "approved"})
+(s/def ::status #{"pending" "denied" "accepted"})
 
 (s/def ::order
   ;; "Schema for incoming order from Kafka."
@@ -91,7 +91,7 @@
 ;; =============================================================================
 
 (s/def ::total-validated nat-int?)
-(s/def ::total-approved nat-int?)
+(s/def ::total-accepted nat-int?)
 (s/def ::total-rejected nat-int?)
 (s/def ::processor-id string?)
 
@@ -162,8 +162,9 @@
    :customer-id (:customer-id order)
    :product-id (:product-id order)
    :quantity (:quantity order)
+   :unit-price (:unit-price order)
    :total (:total order)
-   :status (if validation-passed "approved" "denied")
+   :status (if validation-passed "accepted" "denied")
    :registered-at (System/currentTimeMillis)
    :version 1
    :validation-passed validation-passed})
