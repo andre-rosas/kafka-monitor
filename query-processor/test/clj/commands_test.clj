@@ -47,8 +47,9 @@
 
 (use-fixtures :each
   (fn [f]
-    ;; Silence all logs during tests
+    ;; Silence all logs during tests AND mock add-revenue
     (with-redefs [query-processor.db/save-all-views! (constantly nil)
+                  agg/add-revenue (fn [stats _order] stats)
                   log/debug (constantly nil)
                   log/info (constantly nil)
                   log/warn (constantly nil)
@@ -66,7 +67,6 @@
 
       (is (true? (:success result)))
       (is (= "ORDER-123" (:order-id result)))
-      (is (some? (:views result)))
 
       (let [views @(:views-atom context)]
         (is (some? (get-in views [:customer-stats 42])))

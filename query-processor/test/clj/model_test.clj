@@ -37,6 +37,8 @@
   {:order-id "ORDER-123"
    :customer-id 42
    :product-id "PROD-001"
+   :quantity 5
+   :unit-price 30.0
    :total 150.0
    :status "accepted"
    :timestamp 1234567890})
@@ -155,5 +157,5 @@
 (deftest test-extract-timeline-entry-only-needed-fields
   (testing "Timeline entry contains only needed fields"
     (let [result (model/extract-timeline-entry valid-order)
-          expected-keys #{:order-id :customer-id :product-id :total :status :timestamp}]
+          expected-keys #{:order-id :customer-id :product-id :quantity :unit-price :total :status :timestamp}]
       (is (= expected-keys (set (keys result)))))))

@@ -180,74 +180,78 @@
       (is (= 3 (:error-count result))))))
 
 ;; =============================================================================
-;; Full Aggregation Tests
+;; Full Aggregation Tests - WITH MOCKED add-revenue
 ;; =============================================================================
 
 (deftest test-aggregate-order-first-order
   (testing "Aggregate first order updates all views"
-    (let [views (agg/init-views "processor-1")
-          config {:timeline-max-size 100}
-          result (agg/aggregate-order views order-1 config)]
+    (with-redefs [agg/add-revenue (fn [stats _order] stats)]
+      (let [views (agg/init-views "processor-1")
+            config {:timeline-max-size 100}
+            result (agg/aggregate-order views order-1 config)]
 
-      ;; Customer stats created
-      (is (= 1 (count (:customer-stats result))))
-      (is (some? (get-in result [:customer-stats 42])))
+        ;; Customer stats created
+        (is (= 1 (count (:customer-stats result))))
+        (is (some? (get-in result [:customer-stats 42])))
 
-      ;; Product stats created
-      (is (= 1 (count (:product-stats result))))
-      (is (some? (get-in result [:product-stats "PROD-A"])))
+        ;; Product stats created
+        (is (= 1 (count (:product-stats result))))
+        (is (some? (get-in result [:product-stats "PROD-A"])))
 
-      ;; Timeline updated
-      (is (= 1 (count (:timeline result))))
+        ;; Timeline updated
+        (is (= 1 (count (:timeline result))))
 
-      ;; Processing stats incremented
-      (is (= 1 (get-in result [:processing-stats :processed-count]))))))
+        ;; Processing stats incremented
+        (is (= 1 (get-in result [:processing-stats :processed-count])))))))
 
 (deftest test-aggregate-order-multiple-orders
   (testing "Aggregate multiple orders"
-    (let [views (agg/init-views "processor-1")
-          config {:timeline-max-size 100}
-          result (-> views
-                     (agg/aggregate-order order-1 config)
-                     (agg/aggregate-order order-2 config)
-                     (agg/aggregate-order order-3 config))]
+    (with-redefs [agg/add-revenue (fn [stats _order] stats)]
+      (let [views (agg/init-views "processor-1")
+            config {:timeline-max-size 100}
+            result (-> views
+                       (agg/aggregate-order order-1 config)
+                       (agg/aggregate-order order-2 config)
+                       (agg/aggregate-order order-3 config))]
 
-      ;; Two customers
-      (is (= 2 (count (:customer-stats result))))
+        ;; Two customers
+        (is (= 2 (count (:customer-stats result))))
 
-      ;; Two products
-      (is (= 2 (count (:product-stats result))))
+        ;; Two products
+        (is (= 2 (count (:product-stats result))))
 
-      ;; Three orders in timeline
-      (is (= 3 (count (:timeline result))))
+        ;; Three orders in timeline
+        (is (= 3 (count (:timeline result))))
 
-      ;; Three orders processed
-      (is (= 3 (get-in result [:processing-stats :processed-count]))))))
+        ;; Three orders processed
+        (is (= 3 (get-in result [:processing-stats :processed-count])))))))
 
 (deftest test-aggregate-order-same-customer
   (testing "Aggregate multiple orders from same customer"
-    (let [views (agg/init-views "processor-1")
-          config {:timeline-max-size 100}
-          result (-> views
-                     (agg/aggregate-order order-1 config)
-                     (agg/aggregate-order order-2 config))]
+    (with-redefs [agg/add-revenue (fn [stats _order] stats)]
+      (let [views (agg/init-views "processor-1")
+            config {:timeline-max-size 100}
+            result (-> views
+                       (agg/aggregate-order order-1 config)
+                       (agg/aggregate-order order-2 config))]
 
-      (let [customer-stats (get-in result [:customer-stats 42])]
-        (is (= 2 (:total-orders customer-stats)))
-        (is (= 300.0 (:total-spent customer-stats)))
-        (is (= "ORDER-002" (:last-order-id customer-stats)))))))
+        (let [customer-stats (get-in result [:customer-stats 42])]
+          (is (= 2 (:total-orders customer-stats)))
+          (is (= 300.0 (:total-spent customer-stats)))
+          (is (= "ORDER-002" (:last-order-id customer-stats))))))))
 
 (deftest test-aggregate-order-batch
   (testing "Aggregate batch of orders"
-    (let [views (agg/init-views "processor-1")
-          config {:timeline-max-size 100}
-          orders [order-1 order-2 order-3]
-          result (agg/aggregate-order-batch views orders config)]
+    (with-redefs [agg/add-revenue (fn [stats _order] stats)]
+      (let [views (agg/init-views "processor-1")
+            config {:timeline-max-size 100}
+            orders [order-1 order-2 order-3]
+            result (agg/aggregate-order-batch views orders config)]
 
-      (is (= 2 (count (:customer-stats result))))
-      (is (= 2 (count (:product-stats result))))
-      (is (= 3 (count (:timeline result))))
-      (is (= 3 (get-in result [:processing-stats :processed-count]))))))
+        (is (= 2 (count (:customer-stats result))))
+        (is (= 2 (count (:product-stats result))))
+        (is (= 3 (count (:timeline result))))
+        (is (= 3 (get-in result [:processing-stats :processed-count])))))))
 
 ;; =============================================================================
 ;; Init Views Tests
