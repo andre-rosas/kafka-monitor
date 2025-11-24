@@ -1,4 +1,3 @@
-
 (defproject monitor "0.1.0-SNAPSHOT"
   :description "HTTP API and Dashboard for Kafka Monitor"
   :url "https://github.com/andre-rosas/kafka-monitor"
@@ -30,7 +29,7 @@
                  [ch.qos.logback/logback-classic "1.2.12"]
                  [org.slf4j/slf4j-api "1.7.36"]
 
-                 ;; ClojureScript + React (via CLJSJS)
+                 ;; ClojureScript + React
                  [cljsjs/react "18.2.0-1"]
                  [cljsjs/react-dom "18.2.0-1"]
                  [reagent "1.2.0"]
@@ -48,7 +47,8 @@
   :repositories [["clojars" {:url "https://repo.clojars.org/"}]]
 
   :plugins [[lein-cljsbuild "1.1.8"]
-            [lein-cloverage "1.2.4"]]
+            [lein-cloverage "1.2.4"]
+            [lein-figwheel "0.5.20"]]
 
   :source-paths ["src/clj"]
   :test-paths ["test/clj"]
@@ -62,7 +62,21 @@
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
 
   :cljsbuild {:builds
-              [{:id "min"
+              [{:id "dev"
+                :source-paths ["src/cljs"]
+                :figwheel {:on-jsload "monitor.core/mount-root"
+                           ;;    :open-urls []
+                           }
+                :compiler {:main monitor.core
+                           :asset-path "js/compiled/out"
+                           :output-to "resources/public/js/compiled/app.js"
+                           :output-dir "resources/public/js/compiled/out"
+                           :optimizations :none
+                           :pretty-print true
+                           :source-map true
+                           :source-map-timestamp true
+                           :parallel-build true}}
+               {:id "min"
                 :source-paths ["src/cljs"]
                 :compiler {:main monitor.core
                            :output-to "resources/public/js/compiled/app.js"
@@ -76,6 +90,15 @@
                            :target :nodejs
                            :optimizations :none
                            :pretty-print true}}]}
+
+  :figwheel {:css-dirs ["resources/public/css"]
+             :server-port 3449
+             :server-ip "0.0.0.0" ; Accept from Docker host
+             :nrepl-port 7002
+             :nrepl-middleware [cider.piggieback/wrap-cljs-repl]
+             :ring-handler monitor.server/app
+             :hawk-options {:watcher :polling} ; CRITICAL for Docker
+             :reload-clj-files {:clj true :cljc true}}
 
   :doo {:build "test"
         :alias {:default [:node]}}
@@ -102,7 +125,12 @@
               :lcov? true
               :text? true
               :summary? true
-              :fail-threshold 80} ;; Fail if below 80%
+              :fail-threshold 80}
 
-  :profiles {:uberjar {:aot :all
+  :profiles {:dev {:dependencies [[figwheel-sidecar "0.5.20"]
+                                  [cider/piggieback "0.5.3"]
+                                  [binaryage/devtools "1.0.7"]]
+                   :source-paths ["src/clj" "dev"]
+                   :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}}
+             :uberjar {:aot :all
                        :prep-tasks ["compile" ["cljsbuild" "once" "min"]]}})
