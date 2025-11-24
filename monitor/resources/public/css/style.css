@@ -239,7 +239,7 @@
   .table th,
   .sortable-table th {
     padding: 1rem;
-    text-align: left;
+    text-align: center;
     color: #94a3b8;
     font-weight: 600;
     font-size: 0.875rem;
@@ -348,6 +348,9 @@
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
+    min-width: 80px;
+    display: inline-block;
+    text-align: center;
   }
   
   .status-badge.pending,
@@ -356,8 +359,8 @@
     color: #fbbf24;
   }
   
-  .status-badge.approved,
-  .order-status.approved {
+  .status-badge.accepted,
+  .order-status.accepted {
     background: rgba(16, 185, 129, 0.2);
     color: #10b981;
   }
@@ -608,61 +611,347 @@
   /* =============================================================================
      12. ORDERS VIEW
      ============================================================================= */
-  .orders-view {
-    padding: 2rem;
-    max-width: 1400px;
-    margin: 0 auto;
-  }
-  
-  .orders-content {
-    margin-top: 2rem;
-    display: flex;
-    justify-content: center;
-  }
-  
-  .order-search-container {
-    background: #1e293b;
-    padding: 2rem;
-    border-radius: 12px;
-    width: 100%;
-    max-width: 700px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
-  
-  .order-search-container h3 {
-    margin: 0 0 0.5rem 0;
-    color: #f1f5f9;
-    font-size: 1.5rem;
-  }
-  
-  .order-search-container .description {
-    margin: 0 0 2rem 0;
-    color: #94a3b8;
-    font-size: 0.95rem;
-  }
-  
-  .help-section {
-    background: #0f172a;
-    padding: 1.5rem;
-    border-radius: 8px;
-    border-left: 4px solid #3b82f6;
-    margin-top: 2rem;
-  }
-  
-  .help-section h4 {
-    margin: 0 0 1rem 0;
-    color: #f1f5f9;
-  }
-  
-  .help-section ul {
-    margin: 0;
-    padding-left: 1.5rem;
-    color: #cbd5e1;
-  }
-  
-  .help-section li {
-    margin-bottom: 0.5rem;
-  }
+     .orders-view {
+      padding: 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    .orders-content {
+      display: grid;
+      grid-template-columns: 1fr 350px;
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+    
+    .orders-main {
+      min-width: 0;
+      background: #1e293b;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .orders-sidebar {
+      background: #1e293b;
+      padding: 2rem;
+      border-radius: 12px;
+      height: fit-content;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .orders-info h3 {
+      margin: 0 0 1rem 0;
+      color: #f1f5f9;
+      font-size: 1.125rem;
+    }
+    
+    /* Search Section */
+    .search-section {
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      border: 1px solid #334155;
+    }
+    
+    .search-section h3 {
+      margin: 0 0 1rem 0;
+      color: #f1f5f9;
+    }
+    
+    .search-box {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+    
+    .search-result {
+      margin-top: 1.5rem;
+      padding: 1.5rem;
+      background: #1e293b;
+      border-radius: 8px;
+      border: 1px solid #334155;
+    }
+    
+    .search-result h4 {
+      margin: 0 0 1rem 0;
+      color: #f1f5f9;
+    }
+    
+    .details-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .details-table td {
+      padding: 0.75rem;
+      border-bottom: 1px solid #334155;
+    }
+    
+    .details-table td:first-child {
+      color: #94a3b8;
+      font-weight: 600;
+      width: 150px;
+    }
+    
+    .details-table td:last-child {
+      color: #f1f5f9;
+    }
+    
+    .details-table tr:last-child td {
+      border-bottom: none;
+    }
+    
+    /* Filter Section */
+    .filter-section {
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      border: 1px solid #334155;
+    }
+    
+    .filter-section h4 {
+      margin: 0 0 1rem 0;
+      color: #f1f5f9;
+    }
+    
+    .filter-buttons {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    
+    .filter-btn {
+      padding: 0.75rem 1.5rem;
+      border: 2px solid #334155;
+      background: #1e293b;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: #e2e8f0;
+    }
+    
+    .filter-btn:hover {
+      border-color: #3b82f6;
+      background: #334155;
+    }
+    
+    .filter-btn.active {
+      background: #3b82f6;
+      color: white;
+      border-color: #3b82f6;
+    }
+    
+    .filtered-results {
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 2px solid #334155;
+    }
+    
+    .filtered-results > p {
+      margin-bottom: 1rem;
+      font-weight: 600;
+      color: #94a3b8;
+    }
+    
+    /* Table Styles */
+    .table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .table-container {
+      overflow-x: auto;
+    }
+    
+    .sortable-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .sortable-table thead {
+      background: #0f172a;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    .sortable-table th {
+      padding: 1rem;
+      text-align: center;
+      color: #94a3b8;
+      font-weight: 600;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 2px solid #334155;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s, color 0.2s;
+    }
+    
+    .sortable-table th:hover {
+      background: #1e293b;
+      color: #f1f5f9;
+    }
+    
+    .sortable-table th.sorted {
+      color: #3b82f6;
+      background: #1e293b;
+    }
+    
+    .sortable-table td {
+      padding: 1rem;
+      border-bottom: 1px solid #334155;
+      color: #f1f5f9;
+    }
+    
+    .sortable-table tbody tr {
+      transition: background 0.2s;
+    }
+    
+    .sortable-table tbody tr:hover {
+      background: #0f172a;
+    }
+    
+    .order-id-short {
+      font-family: monospace;
+      font-size: 0.875rem;
+      background: #0f172a;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+    }
+    
+    .timestamp {
+      color: #64748b;
+      font-size: 0.875rem;
+    }
+    
+    /* Status Badges */
+    .status-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    
+    .status-badge.pending {
+      background: rgba(251, 191, 36, 0.2);
+      color: #fbbf24;
+      border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+    
+    .status-badge.accepted {
+      background: rgba(16, 185, 129, 0.2);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    
+    .status-badge.denied {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    
+    /* Info Box */
+    .info-box {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 6px;
+      color: #10b981;
+    }
+    
+    .info-box p {
+      margin: 0;
+    }
+    
+    /* Empty and Loading States */
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: #94a3b8;
+    }
+    
+    .empty-state p {
+      font-size: 1.1rem;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 3rem;
+      color: #64748b;
+    }
+    
+    .error-alert {
+      padding: 1rem;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid #ef4444;
+      border-radius: 6px;
+      color: #fecaca;
+      margin-top: 1rem;
+    }
+
+    .error-box {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 6px;
+      color: #ef4444;
+    }
+    
+    .error-box p {
+      margin: 0;
+    }
+    
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .orders-content {
+        grid-template-columns: 1fr;
+      }
+      
+      .orders-sidebar {
+        order: 2;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .search-box {
+        flex-direction: column;
+      }
+      
+      .filter-buttons {
+        flex-direction: column;
+      }
+      
+      .filter-btn {
+        width: 100%;
+      }
+      
+      .table-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+      
+      .sortable-table {
+        font-size: 0.8rem;
+      }
+      
+      .sortable-table th,
+      .sortable-table td {
+        padding: 0.5rem;
+      }
+    }
   
   /* =============================================================================
      13. PROCESSORS VIEW
