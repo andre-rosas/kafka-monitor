@@ -110,14 +110,14 @@
    (let [stats (:stats db)
          rp (:registry-processor stats)
 
-         current-approved (:approved-count rp 0)
+         current-accepted (:accepted-count rp 0)
          current-denied (:denied-count rp 0)
          current-pending (:pending-count rp 0)
 
-         new-approved (cond
-                        (and (= old-status "pending") (= new-status "approved")) (inc current-approved)
-                        (and (= old-status "approved") (= new-status "pending")) (dec current-approved)
-                        :else current-approved)
+         new-accepted (cond
+                        (and (= old-status "pending") (= new-status "accepted")) (inc current-accepted)
+                        (and (= old-status "accepted") (= new-status "pending")) (dec current-accepted)
+                        :else current-accepted)
 
          new-denied (cond
                       (and (= old-status "pending") (= new-status "denied")) (inc current-denied)
@@ -130,7 +130,7 @@
                        :else current-pending)
 
          new-rp (assoc rp
-                       :approved-count new-approved
+                       :accepted-count new-accepted
                        :denied-count new-denied
                        :pending-count new-pending)
 
